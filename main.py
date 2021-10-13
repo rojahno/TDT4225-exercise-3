@@ -2,6 +2,7 @@ import sys
 
 from DbConnector import DbConnector
 from task1.DatabaseSetup import DatabaseSetup
+from task2.Queries import Queries
 
 
 def task_1():
@@ -14,7 +15,21 @@ def task_1():
     # Shows the collections
     # setup.show_coll()
     setup.traverse_dataset()
-    setup.get_num_trackpoints()
+    # setup.get_num_trackpoints()
+
+def task_2():
+    # Creates a connection with the database
+    query = Queries()
+
+    # Get number of users
+    query.get_num_user()
+
+    # Get number of activities
+    query.get_num_activities()
+
+    # Get number of trackpoints
+    query.get_num_trackpoints()
+
 
 
 def task_3():
@@ -22,7 +37,7 @@ def task_3():
 
 
 def main():
-    task_1()
+    task_2()
 
 
 if __name__ == "__main__":

@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from pymongo import MongoClient, version
 
 load_dotenv()
+
+
 class DbConnector:
     """
     Connects to the MongoDB server on the Ubuntu virtual machine.

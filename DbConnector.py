@@ -1,3 +1,5 @@
+import os
+
 from pymongo import MongoClient, version
 
 
@@ -13,10 +15,10 @@ class DbConnector:
     """
 
     def __init__(self,
-                 DATABASE='DATABASE_NAME',
-                 HOST="tdt4225-xx.idi.ntnu.no",
-                 USER="TEST_USER",
-                 PASSWORD="test123"):
+                 HOST="172.17.0.2:27017",
+                 DATABASE="test_db",
+                 USER=os.getenv('USERNAME'),
+                 PASSWORD=os.getenv('PASSWORD')):
         uri = "mongodb://%s:%s@%s/%s" % (USER, PASSWORD, HOST, DATABASE)
         # Connect to the databases
         try:

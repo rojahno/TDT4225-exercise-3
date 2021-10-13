@@ -1,8 +1,9 @@
 import os
+from dotenv import load_dotenv
 
 from pymongo import MongoClient, version
 
-
+load_dotenv()
 class DbConnector:
     """
     Connects to the MongoDB server on the Ubuntu virtual machine.
@@ -15,11 +16,13 @@ class DbConnector:
     """
 
     def __init__(self,
-                 HOST="172.17.0.2:27017",
+                 HOST="localhost",
                  DATABASE="test_db",
                  USER=os.getenv('USERNAME'),
                  PASSWORD=os.getenv('PASSWORD')):
+
         uri = "mongodb://%s:%s@%s/%s" % (USER, PASSWORD, HOST, DATABASE)
+        print(uri)
         # Connect to the databases
         try:
             self.client = MongoClient(uri)

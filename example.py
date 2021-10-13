@@ -51,7 +51,7 @@ class ExampleProgram:
         collection.drop()
 
     def show_coll(self):
-        collections = self.client['test'].list_collection_names()
+        collections = self.client['test_db'].list_collection_names()
         print(collections)
 
 

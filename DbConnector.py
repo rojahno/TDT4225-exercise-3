@@ -18,7 +18,7 @@ class DbConnector:
     """
 
     def __init__(self,
-                 HOST="localhost",
+                 HOST=os.getenv("PORT"),
                  DATABASE="test_db",
                  USER=os.getenv('USERNAME'),
                  PASSWORD=os.getenv('PASSWORD')):

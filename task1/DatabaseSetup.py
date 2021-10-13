@@ -245,13 +245,17 @@ class DatabaseSetup:
                 self.insert_user(user)
 
     def insert_user(self, user: dict):
-        self.db["User"].insert_one(user)
+        self.db["user"].insert_one(user)
         print("Created user", user, "with", "activities")
 
     def insert_activity(self, activity: dict):
-        self.db["User"].insert_one(activity)
+        self.db["activities"].insert_one(activity)
         print("Created activity", activity, "with", "trackpoints")
 
     def batch_insert_track_points(self, track_points: list):
-        self.db["Trackpoint"].insert_many(track_points)
-        #print("Created trackpoints", track_points)
+        self.db["track_points"].insert_many(track_points)
+        # print("Created trackpoints", track_points)
+
+    def get_num_trackpoints(self):
+        track_point_collections = self.db["track_point"].find().count()
+        print(track_point_collections)

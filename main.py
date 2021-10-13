@@ -14,6 +14,7 @@ def task_1():
     # Shows the collections
     setup.show_coll()
     setup.traverse_dataset()
+    setup.get_num_trackpoints()
 
 
 def task_3():

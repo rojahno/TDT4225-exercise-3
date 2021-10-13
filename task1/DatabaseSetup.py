@@ -2,8 +2,6 @@ import os
 import sys
 import uuid
 
-from tabulate import tabulate
-
 from DbConnector import DbConnector
 
 """
@@ -183,9 +181,9 @@ class DatabaseSetup:
                 'transportation_mode': None}
 
     def create_user(self, root):
-        user_id = root.split("/")[3]
+        user_id = os.path.basename(os.path.dirname(root))
+        print(user_id)
         user_label = self.get_user_label()
-        print(user_label)
         has_label = False
         if user_id in user_label:
             has_label = True
@@ -237,12 +235,11 @@ class DatabaseSetup:
                                 track_point_list.append(
                                     {'latitude': latitude, 'longitude': longitude,
                                      'altitude': altitude, 'days_passed': days_passed, 'start_time': start_time})
-                        self.batch_insert_track_points(track_point_list)
+                        #self.batch_insert_track_points(track_point_list)
                         activity = self.create_activity(root, file)
-                        self.insert_activity(activity)  # Inserts the activity into the database
+                        #self.insert_activity(activity)  # Inserts the activity into the database
                 user = self.create_user(root)
-                print(user)
-                self.insert_user(user)
+                #self.insert_user(user)
 
     def insert_user(self, user: dict):
         self.db["user"].insert_one(user)
@@ -250,12 +247,12 @@ class DatabaseSetup:
 
     def insert_activity(self, activity: dict):
         self.db["activities"].insert_one(activity)
-        print("Created activity", activity, "with", "trackpoints")
+        # print("Created activity", activity, "with", "trackpoints")
 
     def batch_insert_track_points(self, track_points: list):
         self.db["track_points"].insert_many(track_points)
         # print("Created trackpoints", track_points)
 
     def get_num_trackpoints(self):
-        track_point_collections = self.db["track_point"].find().count()
+        track_point_collections = self.db["track_points"].find().count()
         print(track_point_collections)

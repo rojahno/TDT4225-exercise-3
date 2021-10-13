@@ -16,7 +16,7 @@ Handles the database setup.
 
 class DatabaseSetup:
 
-    def __init__(self, connection: DbConnector):
+    def __init__(self):
         self.connection = DbConnector()
         self.client = self.connection.client
         self.db = self.connection.db
@@ -26,9 +26,19 @@ class DatabaseSetup:
         collection = self.db.create_collection(collection_name)
         print('Created collection: ', collection)
 
+    def create_all_collections(self):
+        self.create_coll("user")
+        self.create_coll("activities")
+        self.create_coll("track_points")
+
     def drop_coll(self, collection_name):
         collection = self.db[collection_name]
         collection.drop()
+
+    def drop_all_coll(self):
+        self.drop_coll("user")
+        self.drop_coll("activities")
+        self.drop_coll("track_points")
 
     def show_coll(self):
         collections = self.client['test_db'].list_collection_names()
@@ -59,7 +69,7 @@ class DatabaseSetup:
         @return: A list of labels
         @rtype: list
         """
-        label_path = "../dataset/dataset/labeled_ids.txt"
+        label_path = "dataset/dataset/labeled_ids.txt"
         labels = open(label_path, 'r').read().splitlines()
         return labels
 
@@ -69,24 +79,9 @@ class DatabaseSetup:
         @return: A sorted list of user ids
         @rtype: list
         """
-        path = "../dataset/dataset/Data"
+        path = "dataset/dataset/Data"
         user_ids = sorted([f for f in os.listdir(path) if not f.startswith('.')])
         return user_ids
-
-    def insert_users(self):
-        """
-        Inserts users to the database
-        @return: None
-        @rtype: None
-        """
-        user_labels = self.get_user_label()
-        user_ids = self.get_user_ids()
-
-        for user in user_ids:
-            has_label = False
-            if user in user_labels:
-                has_label = True
-            new_user = {'id': user, 'has_label': has_label, 'activities': []}
 
     def get_last_line(self, root: str, file: str):
         """
@@ -182,10 +177,19 @@ class DatabaseSetup:
         if user_id in labeled_users:
             if date_key in self.labels_dict[user_id]:
                 transportation_mode = self.labels_dict[user_id][date_key]
-                return {'id': activity_id, 'user_id': user_id, 'start_time': start_time, 'end_time': end_time,
+                return {'id': activity_id, 'start_time': start_time, 'end_time': end_time,
                         'transportation_mode': transportation_mode}
-        return {'id': activity_id, 'user_id': user_id, 'start_time': start_time, 'end_time': end_time,
+        return {'id': activity_id, 'start_time': start_time, 'end_time': end_time,
                 'transportation_mode': None}
+
+    def create_user(self, root):
+        user_id = root.split("/")[3]
+        user_label = self.get_user_label()
+        print(user_label)
+        has_label = False
+        if user_id in user_label:
+            has_label = True
+        return {'id': user_id, 'has_label': has_label}
 
     def create_label_activities(self):
         """
@@ -193,7 +197,7 @@ class DatabaseSetup:
         @return: label_activity_list - a list with all label activities
         @rtype: list
         """
-        for root, dirs, files in os.walk('../dataset/dataset/Data', topdown=True):
+        for root, dirs, files in os.walk('dataset/dataset/Data', topdown=True):
             for file in files:
                 if file == "labels.txt":
                     with open(os.path.join(root, file)) as f:
@@ -216,24 +220,38 @@ class DatabaseSetup:
         @return: None
         @rtype: None
         """
-
         # populate label_dict
         self.create_label_activities()
-        for root, dirs, files in os.walk('../dataset/dataset/Data', topdown=True):
+        for root, dirs, files in os.walk('dataset/dataset/Data', topdown=True):
             if len(dirs) == 0 and len(files) > 0:
                 for file in files:
                     path = os.path.join(root, file)  # The current path
                     if self.is_plt_file(self.get_extension(path)) and self.get_nr_of_lines(path) <= 2500:
-                        activity = self.create_activity(root, file)
-                        self.insert_activity(activity)  # Inserts the activity into the database
                         track_point_list = []  # A list to batch insert the trajectories
                         with open(os.path.join(root, file)) as f:  # opens the current file
                             for read in range(6):
                                 f.readline()
-
                             for line in f:
                                 latitude, longitude, altitude, days_passed, start_time = \
                                     self.format_trajectory_line(line)
                                 track_point_list.append(
-                                    {'activity_id': activity.id, 'latitude': latitude, 'longitude': longitude,
+                                    {'latitude': latitude, 'longitude': longitude,
                                      'altitude': altitude, 'days_passed': days_passed, 'start_time': start_time})
+                        self.batch_insert_track_points(track_point_list)
+                        activity = self.create_activity(root, file)
+                        self.insert_activity(activity)  # Inserts the activity into the database
+                user = self.create_user(root)
+                print(user)
+                self.insert_user(user)
+
+    def insert_user(self, user: dict):
+        self.db["User"].insert_one(user)
+        print("Created user", user, "with", "activities")
+
+    def insert_activity(self, activity: dict):
+        self.db["User"].insert_one(activity)
+        print("Created activity", activity, "with", "trackpoints")
+
+    def batch_insert_track_points(self, track_points: list):
+        self.db["Trackpoint"].insert_many(track_points)
+        #print("Created trackpoints", track_points)

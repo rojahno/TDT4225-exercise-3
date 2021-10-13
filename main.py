@@ -5,11 +5,15 @@ from task1.DatabaseSetup import DatabaseSetup
 
 
 def task_1():
-    # Creates a connection with the database
-    connector = DbConnector()
     # Creates a database setup object
-    setup = DatabaseSetup(connector)
+    setup = DatabaseSetup()
 
+    # Creates user, activites and track points
+    setup.drop_all_coll()
+    setup.create_all_collections()
+    # Shows the collections
+    setup.show_coll()
+    setup.traverse_dataset()
 
 
 def task_3():

@@ -116,7 +116,7 @@ class DatabaseSetup:
         @return: A list of labels
         @rtype: list
         """
-        label_path = "dataset/dataset/labeled_ids.txt"
+        label_path = "../dataset/dataset/labeled_ids.txt"
         labels = open(label_path, 'r').read().splitlines()
         return labels
 
@@ -126,7 +126,7 @@ class DatabaseSetup:
         @return: A sorted list of user ids
         @rtype: list
         """
-        path = "dataset/dataset/Data"
+        path = "../dataset/dataset/Data"
         user_ids = sorted([f for f in os.listdir(path) if not f.startswith('.')])
         return user_ids
 
@@ -253,7 +253,7 @@ class DatabaseSetup:
         @return: label_activity_list - a list with all label activities
         @rtype: list
         """
-        for root, dirs, files in os.walk('dataset/dataset/Data', topdown=True):
+        for root, dirs, files in os.walk('../dataset/dataset/Data', topdown=True):
             for file in files:
                 if file == "labels.txt":
                     with open(os.path.join(root, file)) as f:
@@ -279,7 +279,7 @@ class DatabaseSetup:
 
         # populate label_dict
         self.create_label_activities()
-        for root, dirs, files in os.walk('dataset/dataset/Data', topdown=True):
+        for root, dirs, files in os.walk('../dataset/dataset/Data', topdown=True):
             if len(dirs) == 0 and len(files) > 0:
                 for file in files:
                     path = os.path.join(root, file)  # The current path

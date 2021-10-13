@@ -5,7 +5,6 @@ import uuid
 from tabulate import tabulate
 
 from DbConnector import DbConnector
-from task_1.Activity import Activity
 
 """
 Handles the database setup.
@@ -18,78 +17,22 @@ Handles the database setup.
 class DatabaseSetup:
 
     def __init__(self, connection: DbConnector):
-        self.connection = connection
-        self.db_connection = self.connection.db_connection
-        self.cursor = self.connection.cursor
+        self.connection = DbConnector()
+        self.client = self.connection.client
+        self.db = self.connection.db
         self.labels_dict = {}
 
-    def create_user_table(self):
-        query = """CREATE TABLE IF NOT EXISTS USER (
-                   id VARCHAR(50) NOT NULL PRIMARY KEY,
-                   has_labels BOOLEAN);
-                """
-        self.cursor.execute(query)
-        self.db_connection.commit()
+    def create_coll(self, collection_name):
+        collection = self.db.create_collection(collection_name)
+        print('Created collection: ', collection)
 
-    def create_activity_table(self):
-        query = """CREATE TABLE IF NOT EXISTS ACTIVITY (
-                   id varchar(128) NOT NULL PRIMARY KEY,
-                   user_id VARCHAR(50) NOT NULL,
-                   FOREIGN KEY (user_id) REFERENCES test_db.USER(id),
-                   transportation_mode VARCHAR(30), 
-                   start_date_time DATETIME,
-                   end_date_time DATETIME);
-                """
-        self.cursor.execute(query)
-        self.db_connection.commit()
+    def drop_coll(self, collection_name):
+        collection = self.db[collection_name]
+        collection.drop()
 
-    def create_track_point_table(self):
-        query = """CREATE TABLE IF NOT EXISTS TRACK_POINT (
-                   id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-                   activity_id varchar(128) NOT NULL,
-                   FOREIGN KEY (activity_id) REFERENCES test_db.ACTIVITY(id),
-                   lat DOUBLE,
-                   lon DOUBLE, 
-                   altitude INT,
-                   data_days DOUBLE, 
-                   data_time DATETIME);
-                """
-        self.cursor.execute(query)
-        self.db_connection.commit()
-
-    def print_users(self):
-        query = "SELECT * FROM test_db.USER"
-        self.cursor.execute(query)
-        rows = self.cursor.fetchall()
-        # Using tabulate to show the table in a nice way
-        print(f"Data from table USERS tabulated:\n{tabulate(rows, headers=self.cursor.column_names)}")
-
-    def print_activity(self):
-        query = "SELECT * FROM test_db.ACTIVITY"
-        self.cursor.execute(query)
-        rows = self.cursor.fetchall()
-        # Using tabulate to show the table in a nice way
-        print(f"Data from table USERS tabulated:\n{tabulate(rows, headers=self.cursor.column_names)}")
-
-    def create_tables(self):
-        self.create_user_table()
-        self.create_activity_table()
-        self.create_track_point_table()
-
-    def drop_tables(self):
-        print('Are you sure you would like to drop the tables? (Y/N)')
-        decision = input()
-        if decision == "Y" or decision == "y":
-            query = """DROP TABLE test_db.USER, test_db.ACTIVITY, test_db.TRACK_POINT CASCADE """
-            self.cursor.execute(query)
-            print('Tables dropped')
-        else:
-            print('No tables were dropped')
-
-    def show_tables(self):
-        self.cursor.execute("SHOW TABLES")
-        rows = self.cursor.fetchall()
-        print(tabulate(rows, headers=self.cursor.column_names))
+    def show_coll(self):
+        collections = self.client['test_db'].list_collection_names()
+        print(collections)
 
     def is_plt_file(self, extension):
         return extension == ".plt"
@@ -139,16 +82,11 @@ class DatabaseSetup:
         user_labels = self.get_user_label()
         user_ids = self.get_user_ids()
 
-        try:
-            for user in user_ids:
-                has_label = False
-                if user in user_labels:
-                    has_label = True
-                query = "INSERT INTO test_db.USER (id, has_labels) VALUES ('%s', %s)"
-                self.cursor.execute(query % (user, has_label))
-            self.db_connection.commit()
-        except Exception as e:
-            print(f'An error occurred while inserting users:{sys.exc_info()[2]}')
+        for user in user_ids:
+            has_label = False
+            if user in user_labels:
+                has_label = True
+            new_user = {'id': user, 'has_label': has_label, 'activities': []}
 
     def get_last_line(self, root: str, file: str):
         """
@@ -244,8 +182,10 @@ class DatabaseSetup:
         if user_id in labeled_users:
             if date_key in self.labels_dict[user_id]:
                 transportation_mode = self.labels_dict[user_id][date_key]
-                return Activity(activity_id, user_id, start_time, end_time, transportation_mode)
-        return Activity(activity_id, user_id, start_time, end_time, None)
+                return {'id': activity_id, 'user_id': user_id, 'start_time': start_time, 'end_time': end_time,
+                        'transportation_mode': transportation_mode}
+        return {'id': activity_id, 'user_id': user_id, 'start_time': start_time, 'end_time': end_time,
+                'transportation_mode': None}
 
     def create_label_activities(self):
         """
@@ -295,55 +235,5 @@ class DatabaseSetup:
                                 latitude, longitude, altitude, days_passed, start_time = \
                                     self.format_trajectory_line(line)
                                 track_point_list.append(
-                                    (activity.id, latitude, longitude, altitude, days_passed, start_time))
-                        self.batch_insert_track_points(track_point_list)  # Batch insert the track points in this file
-
-    def insert_activity(self, activity: Activity):
-        """
-        Inserts a single activity
-        @param activity: The activity that should be inserted into the database.
-        @type activity: Activity
-        @return: None
-        @rtype: None
-        """
-        if activity.transportation_mode is None:
-            query = """INSERT INTO test_db.ACTIVITY (id, user_id, start_date_time, end_date_time) 
-                                VALUES ('%s', '%s','%s','%s')"""
-            self.cursor.execute(query % (
-                activity.id, activity.user_id, activity.start_date_time, activity.end_date_time))
-        else:
-            query = """INSERT INTO test_db.ACTIVITY (id, user_id, transportation_mode, start_date_time, end_date_time) 
-                                                VALUES ('%s', '%s','%s', '%s', '%s')"""
-            self.cursor.execute(query % (
-                activity.id, activity.user_id, activity.transportation_mode, activity.start_date_time,
-                activity.end_date_time,
-            ))
-        self.db_connection.commit()
-
-    def batch_insert_track_points(self, track_points: list):
-        """
-        Batch insert users into the database
-        @param track_points: The track point list
-        @type track_points:
-        @return: None
-        @rtype: None
-        """
-
-        trajectory_query = """INSERT INTO test_db.TRACK_POINT (activity_id, lat, lon, altitude, data_days, data_time) 
-                                  VALUES (%s, %s, %s, %s, %s, %s)"""
-        self.cursor.executemany(trajectory_query, track_points)
-        self.db_connection.commit()
-
-    def batch_insert_users(self, users: list):
-        """
-        Batch insert users into the database
-        @param users: The user list
-        @type list:
-        @return: None
-        @rtype: None
-        """
-
-        users_query = """INSERT INTO test_db.TRACK_POINT (id, has_label) 
-                                  VALUES (%s, %s)"""
-        self.cursor.executemany(users_query, users)
-        self.db_connection.commit()
+                                    {'activity_id': activity.id, 'latitude': latitude, 'longitude': longitude,
+                                     'altitude': altitude, 'days_passed': days_passed, 'start_time': start_time})

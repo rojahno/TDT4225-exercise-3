@@ -28,6 +28,8 @@ docker exec -it mongo-on-docker bash
 8. Go into mongo with auth rights with the username created in step 6.
 ```bash
 mongo admin -u USER_PREVIOUSLY_DEFINED
+
+mongo -u "yourAdminUser" -p "yourAdminPassword" --authenticationDatabase 'admin'
 ```
 9. An password input is prompted. Write the password used in step 6.
 10. Create a user with all read/write rights:

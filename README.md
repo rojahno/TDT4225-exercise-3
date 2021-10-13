@@ -19,13 +19,13 @@ docker pull mongo
 ```
 6. Create a docker container with a Mongo database. Change "mongo-on-docker" with the container name, mongoadmin with the root username, and "root" with the root password. Remember to remove the brackets from username and password.
 ```bash
-docker run -d --name mongo-on-docker  -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=[mongoadmin] -e MONGO_INITDB_ROOT_PASSWORD=[root] mongo --bind_ip_all
+docker run -d --name mongo-on-docker -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=[mongoadmin] -e MONGO_INITDB_ROOT_PASSWORD=[root] mongo --bind_ip_all
 ```
 7. Go the the docker bash. Write "docker ps" in the terminal to display the name. 
 ```bash
 docker exec -it mongo-on-docker bash
 ```
-8. Go into mongo with auth rights
+8. Go into mongo with auth rights with the username created in step 6.
 ```bash
 mongo admin -u USER_PREVIOUSLY_DEFINED
 ```

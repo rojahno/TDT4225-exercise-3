@@ -15,7 +15,8 @@ def task_1():
     # setup.show_coll()
     # setup.traverse_dataset()
     setup.get_num_trackpoints()
-    print(f'Time elapsed: {str(datetime.timedelta(seconds=(time.time()-start)))}')
+    print(f'Time elapsed: {str(datetime.timedelta(seconds=(time.time() - start)))}')
+
 
 def task_2():
     # Creates a connection with the database
@@ -29,7 +30,6 @@ def task_2():
 
     # Get number of trackpoints
     query.get_num_trackpoints()
-
 
 
 def task_3():

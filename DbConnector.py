@@ -20,7 +20,7 @@ class DbConnector:
     def __init__(self,
                  HOST=os.getenv("HOST"),
                  DATABASE="test_db",
-                 USER="hallvman",
+                 USER=os.getenv('USERNAME'),
                  PASSWORD=os.getenv('PASSWORD')):
 
         uri = "mongodb://%s:%s@%s/%s" % (USER, PASSWORD, HOST, DATABASE)

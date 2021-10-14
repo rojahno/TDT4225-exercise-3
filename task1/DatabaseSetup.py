@@ -176,9 +176,9 @@ class DatabaseSetup:
         if user_id in labeled_users:
             if date_key in self.labels_dict[user_id]:
                 transportation_mode = self.labels_dict[user_id][date_key]
-                return {'id': activity_id, 'start_time': start_time, 'end_time': end_time,
+                return {'id': activity_id, 'user_id': user_id, 'start_time': start_time, 'end_time': end_time,
                         'transportation_mode': transportation_mode}
-        return {'id': activity_id, 'start_time': start_time, 'end_time': end_time,
+        return {'id': activity_id, 'user_id': user_id, 'start_time': start_time, 'end_time': end_time,
                 'transportation_mode': None}
 
     def create_user(self, root):
@@ -226,13 +226,15 @@ class DatabaseSetup:
         self.create_label_activities()
         for root, dirs, files in os.walk('dataset/dataset/Data', topdown=True):
             if len(dirs) == 0 and len(files) > 0:
-
+                user = self.create_user(root)
+                self.insert_user(user)
                 for file in files:
                     path = os.path.join(root, file)  # The current path
 
                     if self.is_plt_file(self.get_extension(path)) and self.get_nr_of_lines(path) <= 2500:
                         track_point_list = []  # A list to batch insert the trajectories
-
+                        activity = self.create_activity(root, file)
+                        self.insert_activity(activity)  # Inserts the activity into the database
                         with open(os.path.join(root, file)) as f:  # opens the current file
 
                             for read in range(6):
@@ -242,16 +244,9 @@ class DatabaseSetup:
                                 latitude, longitude, altitude, days_passed, start_time = \
                                     self.format_trajectory_line(line)
                                 track_point_list.append(
-                                    {'latitude': latitude, 'longitude': longitude,
+                                    {'activity': activity['id'], 'latitude': latitude, 'longitude': longitude,
                                      'altitude': altitude, 'days_passed': days_passed, 'start_time': start_time})
-
                         self.batch_insert_track_points(track_point_list)
-                        activity = self.create_activity(root, file)
-                        self.insert_activity(activity)  # Inserts the activity into the database
-
-
-                user = self.create_user(root)
-                self.insert_user(user)
 
     def insert_user(self, user: dict):
         self.db["user"].insert_one(user)

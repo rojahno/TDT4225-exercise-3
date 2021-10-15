@@ -3,7 +3,7 @@ import sys
 import uuid
 
 from DbConnector import DbConnector
-
+import datetime
 """
 Handles the database setup.
 - Creates the tables
@@ -131,11 +131,22 @@ class DatabaseSetup:
         transportation_mode = "".join(values[4])
         start_time = start_time.replace("/", "-")
         end_time = end_time.replace("/", "-")
+        start_time = datetime.datetime.strptime(
+            start_time,
+            "%Y-%m-%d %H:%M:%S"
+        )
+        end_time = datetime.datetime.strptime(
+            end_time,
+            "%Y-%m-%d %H:%M:%S"
+        )
         return start_time, end_time, transportation_mode
 
     def format_trajectory_time(self, label: str):
         values = label.split(",")
-        time = "".join((values[5], " ", values[6]))
+        time = datetime.datetime.strptime(
+            "".join((values[5], " ", values[6])),
+            "%Y-%m-%d %H:%M:%S"
+        )
         return time
 
     def format_trajectory_line(self, line: str):
@@ -151,7 +162,10 @@ class DatabaseSetup:
         longitude = values[1]
         altitude = values[3]
         days_passed = values[4]
-        start_time = "".join((values[5].replace('-', '/'), " ", values[6]))
+        start_time = datetime.datetime.strptime(
+            "".join((values[5].replace('-', '/'), " ", values[6])).rstrip(),
+            "%Y/%m/%d %H:%M:%S"
+        )
         return latitude, longitude, altitude, days_passed, start_time
 
     def create_activity(self, root, file):

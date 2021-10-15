@@ -29,7 +29,16 @@ def task_2():
     query.get_num_activities()
 
     # Get number of trackpoints
-    query.get_num_trackpoints()
+    #query.get_num_trackpoints()
+
+    # get users who've never taken a taxi
+    #query.get_non_taxi_users()
+
+    # get avg, min, max of activities
+    #query.get_avg_min_max_act_per_user()
+
+    # Find the top 10 users with the highest number of activities
+    #query.get_10_users_highest_num_act()
 
 
 def task_3():

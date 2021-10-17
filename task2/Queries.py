@@ -81,8 +81,9 @@ class Queries:
 
     # Nr. 4
     def get_num_midnight_active_people(self):
-        """Calculate the datedifference for each activity (in milliseconds), and divide by number of
-            milliseconds in a day. Return all activities with that difference greater than or equal
+        """Calculate the difference between end and start for each activity (in milliseconds),
+            and divide by number of milliseconds in a day.
+            Return all activities with that difference greater than or equal
             to a day.
 
         """
@@ -109,7 +110,7 @@ class Queries:
 
     # Nr. 5
 
-    def get_act_reg_mult_times(self):
+    def get_activities_reg_mult_times(self):
         pass
 
     # Nr. 6

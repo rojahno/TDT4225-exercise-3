@@ -38,7 +38,10 @@ def task_2():
     #query.get_10_users_highest_num_act()
 
     # Find the number of users who started an activity one day, and ended it the next
-    query.get_num_midnight_active_people()
+    #query.get_num_midnight_active_people()
+
+    # Find possibly infected people
+    #query.get_possibly_infected_people()
 
     # get users who've never taken a taxi
     #query.get_non_taxi_users()

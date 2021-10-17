@@ -30,19 +30,14 @@ class Queries:
 
     # Nr. 2
     def get_avg_min_max_act_per_user(self):
-
+        """grouping activities by user_id, and counting number of activities in each group =>
+            pick the user with most and least activities, and the avg number of activities.
+            If more than one user has the min/max activities, pick the last
+        """
         activities_per_user = self.db["activities"].aggregate([
             {
-                "$lookup": {
-                    "from": "user",
-                    "localField": "user_id",
-                    "foreignField": "id",
-                    "as": "users"
-                }
-            },
-            {
                 "$group": {
-                    "_id": "$users.id",
+                    "_id": "$user_id",
                     "activity_count": {"$count": {}}
                 }
             },
@@ -86,9 +81,34 @@ class Queries:
 
     # Nr. 4
     def get_num_midnight_active_people(self):
-        pass
+        """Calculate the datedifference for each activity (in milliseconds), and divide by number of
+            milliseconds in a day. Return all activities with that difference greater than or equal
+            to a day.
+
+        """
+        num_midnight_active = self.db["activities"].aggregate([
+
+            {
+                "$project":
+                    {
+                        "_id": "$user_id",
+                        "activity_id": "$id",
+                        "start_date": "$start_time",
+                        "end_date": "$end_time",
+                        "dateDifference": {
+                            "$divide": [{"$subtract": ["$end_time", "$start_time"]}, 86400000]}
+                    }
+            },
+            {
+                "$match": {"dateDifference": {"$gte": 1}}
+            }
+        ])
+
+        for i in num_midnight_active:
+            print(f"id: {i['_id']}, start_date: {i['start_date'].isoformat()}, end_date: {i['end_date'].isoformat()}")
 
     # Nr. 5
+
     def get_act_reg_mult_times(self):
         pass
 

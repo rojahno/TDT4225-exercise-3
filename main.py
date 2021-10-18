@@ -24,10 +24,10 @@ def task_2():
     query = Queries()
 
     # Get number of users
-    query.get_num_user()
+    #query.get_num_user()
 
     # Get number of activities
-    query.get_num_activities()
+    #query.get_num_activities()
 
     # Get number of trackpoints
     #query.get_num_trackpoints()
@@ -40,6 +40,9 @@ def task_2():
 
     # Find the number of users who started an activity one day, and ended it the next
     #query.get_num_midnight_active_people()
+
+    # Find activities that are registred multiple times
+    query.get_activities_reg_mult_times()
 
     # Find possibly infected people
     #query.get_possibly_infected_people()
@@ -54,7 +57,7 @@ def task_2():
 
 
     # Get the average activities per user
-    query.get_average_activities()
+    #query.get_average_activities()
     timed = str(datetime.timedelta(seconds=(time.time() - start))).split(':')
     print(f'Time elapsed: {timed[0]} hours, {timed[1]} minutes, {timed[2]} seconds')
 

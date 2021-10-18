@@ -4,6 +4,7 @@ import uuid
 
 from DbConnector import DbConnector
 import datetime
+
 """
 Handles the database setup.
 - Creates the tables
@@ -28,6 +29,7 @@ class DatabaseSetup:
         self.create_coll("user")
         self.create_coll("activities")
         self.create_coll("track_points")
+        self.create_coll("counters")
 
     def drop_coll(self, collection_name):
         collection = self.db[collection_name]
@@ -247,16 +249,19 @@ class DatabaseSetup:
                         with open(os.path.join(root, file)) as f:  # opens the current file
                             for read in range(6):
                                 f.readline()
+                            list_position = 0
                             for line in f:
+                                list_position += 1
                                 latitude, longitude, altitude, days_passed, start_time = \
                                     self.format_trajectory_line(line)
                                 track_point_list.append(
                                     {
                                         'user_id': user['id'],
                                         'activity': activity['id'],
+                                        'list_position': list_position,
                                         'location': {
-                                             'type': 'Point',
-                                             'coordinates': [latitude, longitude]
+                                            'type': 'Point',
+                                            'coordinates': [latitude, longitude]
                                         },
                                         'altitude': altitude,
                                         'days_passed': days_passed,

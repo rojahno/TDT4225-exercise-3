@@ -3,6 +3,9 @@ import sys
 import uuid
 import math
 
+import pymongo
+from bson.son import SON
+
 from DbConnector import DbConnector
 
 class Queries:
@@ -111,11 +114,45 @@ class Queries:
     # Nr. 5
 
     def get_activities_reg_mult_times(self):
-        pass
+        a = self.db["activities"].aggregate([
+            {
+                "$group": {
+                    "_id": {"start": "$start_time", "end": "$end_time"},
+                    "count": {"$count": {}}
+                }
+            },
+            {
+                "$match": {
+                    "count": {"$gt": 1}
+                }
+            },
+            {"$sort": {"_id": -1}}
+        ])
+
+        count = 0
+        for i in a:
+            count += 1
+            print(f"start_time: {i['_id']['start']}, end_time: {i['_id']['end']} count: {i['count']}")
+        print(count)
 
     # Nr. 6
     def get_possibly_infected_people(self):
-        pass
+
+        self.db.track_points.create_index([("location", pymongo.GEOSPHERE)])
+        possibly_infected_people = self.db["track_points"].aggregate([
+            {
+                "$geoNear": {
+                    "near": {"type": "Point", "coordinates": [39.97548, 116.33031]},
+                    "key": "location",
+                    "distanceField": "calculated",
+                    "maxDistance": 60,
+                    "spherical": True
+                }
+            }
+        ])
+
+        for i in possibly_infected_people:
+            print(i)
 
     # Nr. 7
     def get_non_taxi_users(self):
@@ -138,9 +175,54 @@ class Queries:
             print(non_taxi_users_2[i:i+4])
 
     # Nr. 8
+    def count_users_per_trasnp_mode(self):
+        users_per_transp_mode = self.db["activities"].aggregate([
+            {
+              "$match": {
+                  "transportation_mode": {"$ne": None}
+              }
+            },
+            {
+                "$group": {
+                    "_id": "$transportation_mode",
+                    "uniqueCount": {"$addToSet": "$user_id"}
+                }
+            },
+            {
+                "$project": {
+                    "uniqueTranspModeCount": {"$size": "$uniqueCount"}
+                }
+            }
+        ])
+
+        for i in users_per_transp_mode:
+            print(f"Trasportation mode: {i['_id']}, Unique non null users: {i['uniqueTranspModeCount']}")
 
     # Nr. 9
-
+    def year_with_most_activities(self):
+        year = self.db["activities"].aggregate([
+            {
+              "$project": {
+                  "start_year": {"$year": "$start_time"}
+              }
+            },
+            {
+                "$group": {
+                    "_id": "$start_year",
+                    "activity_count": {"$count": {}}
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$_id",
+                    "max_activities": {"$max": "$activity_count"},
+                }
+            },
+            {"$sort": {"max_activities": -1}},
+            {"$limit": 1}
+        ])
+        for i in year:
+            print(f"year: {i['_id']}, num activities: {i['max_activities']}")
     # Nr. 10
 
     # Nr. 11

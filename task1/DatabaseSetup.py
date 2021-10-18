@@ -158,10 +158,10 @@ class DatabaseSetup:
         @rtype: str
         """
         values = line.split(",")
-        latitude = values[0]
-        longitude = values[1]
-        altitude = values[3]
-        days_passed = values[4]
+        latitude = float(values[0])
+        longitude = float(values[1])
+        altitude = float(values[3])
+        days_passed = float(values[4])
         start_time = datetime.datetime.strptime(
             "".join((values[5].replace('-', '/'), " ", values[6])).rstrip(),
             "%Y/%m/%d %H:%M:%S"
@@ -251,8 +251,16 @@ class DatabaseSetup:
                                 latitude, longitude, altitude, days_passed, start_time = \
                                     self.format_trajectory_line(line)
                                 track_point_list.append(
-                                    {'activity': activity['id'], 'latitude': latitude, 'longitude': longitude,
-                                     'altitude': altitude, 'days_passed': days_passed, 'start_time': start_time})
+                                    {
+                                        'user_id': user['id'],
+                                        'activity': activity['id'],
+                                        'location': {
+                                             'type': 'Point',
+                                             'coordinates': [latitude, longitude]
+                                        },
+                                        'altitude': altitude,
+                                        'days_passed': days_passed,
+                                        'start_time': start_time})
                         self.batch_insert_track_points(track_point_list)
 
     def insert_user(self, user: dict):

@@ -19,6 +19,7 @@ def task_1():
 
 
 def task_2():
+    start = time.time()
     # Creates a connection with the database
     query = Queries()
 
@@ -58,6 +59,11 @@ def task_2():
 
 
 
+
+    # Get the average activities per user
+    query.get_average_activities()
+    timed = str(datetime.timedelta(seconds=(time.time() - start))).split(':')
+    print(f'Time elapsed: {timed[0]} hours, {timed[1]} minutes, {timed[2]} seconds')
 
 
 def task_3():

@@ -44,7 +44,7 @@ class Queries:
                     "activity_count": {"$count": {}}
                 }
             },
-            ]
+        ]
         )
 
         num_users = self.db["user"].find().count()
@@ -58,7 +58,7 @@ class Queries:
                 maximum_with_id = (i["_id"], i["activity_count"])
             num_acs.append(i["activity_count"])
 
-        average = sum(num_acs)/num_users
+        average = sum(num_acs) / num_users
 
         print(f"min num activities: id: {minimum_with_id[0]}, num: {minimum_with_id[1]}\n"
               f"max num activities: id: {maximum_with_id[0]}, num: {maximum_with_id[1]}\n"
@@ -172,15 +172,15 @@ class Queries:
         non_taxi_users_2 = self.db["activities"].find({"transportation_mode": {"$ne": "taxi"}}).distinct("user_id")
         print(f"Nr. of users never taken a taxi ({len(non_taxi_users_2)} in total):\n")
         for i in range(0, len(non_taxi_users_2) - 4, 4):
-            print(non_taxi_users_2[i:i+4])
+            print(non_taxi_users_2[i:i + 4])
 
     # Nr. 8
     def count_users_per_trasnp_mode(self):
         users_per_transp_mode = self.db["activities"].aggregate([
             {
-              "$match": {
-                  "transportation_mode": {"$ne": None}
-              }
+                "$match": {
+                    "transportation_mode": {"$ne": None}
+                }
             },
             {
                 "$group": {
@@ -198,13 +198,16 @@ class Queries:
         for i in users_per_transp_mode:
             print(f"Trasportation mode: {i['_id']}, Unique non null users: {i['uniqueTranspModeCount']}")
 
-    # Nr. 9
-    def year_with_most_activities(self):
+    # Nr. 9a
+    def year_and_month_with_most_activities(self):
+        months = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october"
+                                                                                                         "november",
+                  "december"]
         year = self.db["activities"].aggregate([
             {
-              "$project": {
-                  "start_year": {"$year": "$start_time"}
-              }
+                "$project": {
+                    "start_year": {"$year": "$start_time"}
+                }
             },
             {
                 "$group": {
@@ -223,8 +226,132 @@ class Queries:
         ])
         for i in year:
             print(f"year: {i['_id']}, num activities: {i['max_activities']}")
+
+        month = self.db["activities"].aggregate([
+            {
+                "$project": {
+                    "month": {"$month": "$start_time"},
+                    "year": {"$year": "$start_time"}
+                }
+            },
+            {
+                "$match": {"year": 2008}
+            },
+            {
+                "$group": {
+                    "_id": "$month",
+                    "activity_count": {"$count": {}}
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$_id",
+                    "max_activities": {"$max": "$activity_count"},
+                }
+            },
+            {"$sort": {"max_activities": -1}},
+            {"$limit": 1}
+        ])
+        for i in month:
+            print(f"month: {months[i['_id'] - 1]}, num activities: {i['max_activities']}")
+
+    # Nr. 9b
+    # Is 405 hours for user 062 and 1931 hours for user 128 too much?
+    # double check this
+    def user_most_activities_specific_year_month(self):
+        user = self.db["activities"].aggregate([
+            {
+                "$project": {
+                    "_id": "$user_id",
+                    "year_to_match": {"$year": "$start_time"},
+                    "month_to_match": {"$month": "$start_time"},
+                }
+            },
+            {
+                "$match": {
+                    "year_to_match": 2008,
+                    "month_to_match": 11
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$_id",
+                    "activities_per_user": {"$count": {}}
+                }
+            },
+
+            {"$sort": {"activities_per_user": -1}},
+            {"$limit": 2}
+        ])
+
+        user_ids = []
+        for i in user:
+            print(i)
+            user_ids.append(i['_id'])
+
+        hours = self.db["activities"].aggregate([
+            {
+                "$match": {
+                    "user_id": {"$in": user_ids}
+                }
+            },
+            {
+                "$project": {
+                    "_id": "$user_id",
+                    "act_id": "$id",
+                    "start": "$start_time",
+                    "end": "$end_time",
+                    "hours_per_activity": {
+                        "$divide": [{"$subtract": ["$end_time", "$start_time"]}, 3600000]
+                    },
+                }
+            },
+            {"$sort": {"start": -1}},
+            {
+                "$group": {
+                    "_id": "$_id",
+                    "hourSum": {"$sum": "$hours_per_activity"}
+                }
+            }
+        ])
+        for i in hours:
+            print(i)
+
     # Nr. 10
 
     # Nr. 11
+    def mile_high_club(self):
+        # NOT FINISHED!
+        users = self.db["user"].find()
 
-    # Nr. 12
+        accumulated_altitudes = []
+
+        for user in users:
+            user_id = user["id"]
+
+            tp_for_user = self.db["track_points"].aggregate([
+                {
+                    "$match": {
+                        "user_id": user_id
+                    }
+                },
+
+            ])
+            current_user_altitude_sum = 0
+            for i in range(1, len(list(tp_for_user))):
+                if tp_for_user["altitude"] != -777:
+                    current_user_altitude_sum += (tp_for_user[i]["altitude"] - tp_for_user[i - 1]["altitude"])
+                accumulated_altitudes.append(current_user_altitude_sum)
+            print(accumulated_altitudes)
+            """
+            current_user_altitude_sum = 0
+            # https://stackoverflow.com/questions/9789601/pymongo-doesnt-iterate-over-collection
+            for doc in tp_for_user[:-2]:
+                if tp_for_user["altitude"] != -777:
+                    current_user_altitude_sum += (tp_for_user[i]["altitude"] - tp_for_user[i - 1]["altitude"])
+            accumulated_altitudes.append(current_user_altitude_sum)
+            """
+
+
+
+        # Nr. 12

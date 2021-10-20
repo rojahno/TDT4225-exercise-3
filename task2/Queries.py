@@ -4,6 +4,7 @@ import uuid
 import math
 from datetime import datetime
 import pymongo
+from haversine import haversine
 from bson.son import SON
 
 from DbConnector import DbConnector
@@ -324,7 +325,8 @@ class Queries:
 
     # Nr. 10
     def tot_dist_in_2008_by_user_112(self):
-        activities = self.db["activities"].find([
+        print("---start---")
+        activities = self.db["activities"].find(
             {
                 "user_id": 112,
                 "transportation_mode": 'walk',
@@ -333,11 +335,15 @@ class Queries:
                     "$lte": datetime(2008, 12, 31)
                 }
             }
-        ])
+        )
+
+        point: dict
+        for point in track_points:
+            
 
         total_distance = 0
-        for i in activities:
-            print(i)
+
+        print("Totalt distance for user: 112 in 2008 is:", total_distance)
 
     # Nr. 11
     def mile_high_club(self):

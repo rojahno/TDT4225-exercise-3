@@ -43,7 +43,7 @@ def task_2():
 
 
     # Find duplicate activities
-    query.get_activities_reg_mult_times()
+    # query.get_activities_reg_mult_times()
 
     # Find possibly infected people
     #query.get_possibly_infected_people()
@@ -57,7 +57,8 @@ def task_2():
     # year with most activities
     #query.year_with_most_activities()
 
-
+    #
+    query.tot_dist_in_2008_by_user_112()
 
 
 

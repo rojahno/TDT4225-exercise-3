@@ -2,7 +2,7 @@ import os
 import sys
 import uuid
 import math
-
+from datetime import datetime
 import pymongo
 from bson.son import SON
 
@@ -138,7 +138,9 @@ class Queries:
     # Nr. 6
     def get_possibly_infected_people(self):
 
+        print("hei")
         self.db.track_points.create_index([("location", pymongo.GEOSPHERE)])
+        print("hei")
         possibly_infected_people = self.db["track_points"].aggregate([
             {
                 "$geoNear": {
@@ -151,7 +153,9 @@ class Queries:
             }
         ])
 
+        print("hei")
         for i in possibly_infected_people:
+            print("i")
             print(i)
 
     # Nr. 7
@@ -223,7 +227,23 @@ class Queries:
         ])
         for i in year:
             print(f"year: {i['_id']}, num activities: {i['max_activities']}")
+
     # Nr. 10
+    def tot_dist_in_2008_by_user_112(self):
+        activities = self.db["activities"].find([
+            {
+                "user_id": 112,
+                "transportation_mode": 'walk',
+                "start_time": {
+                    "$gte": datetime(2008, 1, 1),
+                    "$lte": datetime(2008, 12, 31)
+                }
+            }
+        ])
+
+        total_distance = 0
+        for i in activities:
+            print(i)
 
     # Nr. 11
 

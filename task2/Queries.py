@@ -5,6 +5,9 @@ import math
 from datetime import datetime
 import pymongo
 from haversine import haversine
+import pandas
+import pymongo
+from IPython.lib.pretty import pprint
 from bson.son import SON
 
 from DbConnector import DbConnector
@@ -337,9 +340,7 @@ class Queries:
             }
         )
 
-        point: dict
-        for point in track_points:
-            
+        
 
         total_distance = 0
 
@@ -351,7 +352,7 @@ class Queries:
         users = self.db["user"].find()
 
         accumulated_altitudes = []
-    
+
         for user in users:
             user_id = user["id"]
 
@@ -378,52 +379,50 @@ class Queries:
             accumulated_altitudes.append(current_user_altitude_sum)
             """
 
-
-
     # Nr. 12
     def get_all_users_with_invalid_activities(self):
         print('Task 12')
-        activities = self.db["activities"].distinct("id")
-        user_dict = {}
-        track_points = None
-        count = 0
-        for activity in activities:
-            count += 1
-            print(count)
-            track_points = self.db["track_points"].aggregate([
-                {
-                    "$match":
-                        {
-                            "activity": activity
-                        }
-                },
-                {
-                    "$sort":
-                        {"list_position": 1}
+        track_points = self.db["track_points"].aggregate([
+            {
+                "$project": {
+                    "_id": "$id",
+                    "activity": "$activity",
+                    "start_time": "$start_time",
+                    "user_id": "$user_id",
+                    "list_position": "$list_position"
                 }
-            ])
-            prev_point = None
-            point: dict
-            for point in track_points:
-                if prev_point is None:
-                    prev_point = point
-                else:
-                    prev_time: datetime = prev_point['start_time']
-                    current_time: datetime = point['start_time']
-                    difference = current_time - prev_time
-                    if difference.seconds > 300:
-                        print(prev_point)
-                        print(point)
-                        print()
-                        user_id: str = point['user_id']
-                        if user_id in user_dict.keys():
-                            prev_invalid_count = user_dict[user_id]
-                            user_dict.update({user_id: prev_invalid_count + 1})
-                        else:
-                            user_dict[user_id] = 1
-                        break
-                    prev_point = point
-            if count == 100:
-                break
+            },
+            {"$sort": {"activity": 1}},
 
-        print(user_dict)
+        ], allowDiskUse=True)
+        user_dict = {}
+        prev_point = None
+        current_activity = ""
+        found_invalid = False
+        point: dict
+        for point in track_points:
+            if point['activity'] != current_activity:
+                found_invalid = False
+                current_activity = point['activity']
+                prev_point = None
+
+            if found_invalid is True:
+                continue
+
+            if prev_point is None:
+                prev_point = point
+
+            else:
+                prev_time: datetime = prev_point['start_time']
+                current_time: datetime = point['start_time']
+                difference = current_time - prev_time
+                if difference.seconds >= 300:
+                    found_invalid = True
+                    user_id: str = point['user_id']
+                    if user_id in user_dict.keys():
+                        prev_invalid_count = user_dict[user_id]
+                        user_dict.update({user_id: prev_invalid_count + 1})
+                    else:
+                        user_dict[user_id] = 1
+                prev_point = point
+        pprint(sorted(user_dict.items()))

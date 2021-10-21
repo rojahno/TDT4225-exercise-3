@@ -69,7 +69,7 @@ def task_2():
 
 
 def main():
-    task_1()
+    # task_1()
     task_2()
 
 

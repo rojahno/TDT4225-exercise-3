@@ -1,10 +1,5 @@
 import math
 from datetime import datetime
-import pymongo
-from haversine import haversine
-import pandas
-import pymongo
-from IPython.lib.pretty import pprint
 from haversine import haversine
 from DbConnector import DbConnector
 
@@ -156,15 +151,15 @@ class Queries:
         possibly_infected_people = []
         points_for_users_matching_date = self.db["track_points"].aggregate([
             {
-              "$match": {
-                  "$expr": {"$lte": [
-                      {"$abs":
-                           {"$dateDiff": {
-                               "startDate": "$start_time",
-                               "endDate": date_to_match,
-                               "unit": "minute"}}},
-                      60]}
-              }
+                "$match": {
+                    "$expr": {"$lte": [
+                        {"$abs":
+                            {"$dateDiff": {
+                                "startDate": "$start_time",
+                                "endDate": date_to_match,
+                                "unit": "minute"}}},
+                        60]}
+                }
             },
             {
                 "$group": {
@@ -187,7 +182,6 @@ class Queries:
         print("Possibly infected users:")
         for user in possibly_infected_people:
             print(user)
-
 
     # Nr. 7
     def get_non_taxi_users(self):
@@ -322,41 +316,10 @@ class Queries:
 
     # Nr. 9b
     def user_most_activities_specific_year_month(self):
-        user = self.db["activities"].aggregate([
+        users = self.db["activities"].aggregate([
             {
                 "$project": {
                     "_id": "$user_id",
-                    "year_to_match": {"$year": "$start_time"},
-                    "month_to_match": {"$month": "$start_time"},
-                }
-            },
-            {
-                "$match": {
-                    "year_to_match": 2008,
-                    "month_to_match": 11
-                }
-            },
-            {
-                "$group": {
-                    "_id": "$_id",
-                    "activities_per_user": {"$count": {}}
-                }
-            },
-
-            {"$sort": {"activities_per_user": -1}},
-            {"$limit": 2}
-        ])
-
-        user_ids = []
-        for i in user:
-            print(i)
-            user_ids.append(i['_id'])
-
-        hours = self.db["activities"].aggregate([
-            {
-                "$project": {
-                    "_id": "$user_id",
-                    "start": "$start_time",
                     "year_to_match": {"$year": "$start_time"},
                     "month_to_match": {"$month": "$start_time"},
                     "hours_per_activity": {
@@ -366,21 +329,27 @@ class Queries:
             },
             {
                 "$match": {
-                    "_id": {"$in": user_ids},
                     "year_to_match": 2008,
                     "month_to_match": 11
                 }
             },
-            {"$sort": {"start": 1}},
             {
                 "$group": {
                     "_id": "$_id",
+                    "activities_per_user": {"$count": {}},
                     "hourSum": {"$sum": "$hours_per_activity"}
                 }
-            }
+            },
+
+            {"$sort": {"activities_per_user": -1}},
+            {"$limit": 2}
         ])
-        for i in hours:
-            print(i)
+        string_list = []
+        user: dict
+        for user in users:
+            string_list.append(
+                f'User {user["_id"]} have {user["activities_per_user"]} activities, and {round(user["hourSum"],2)} hours ')
+        answer_print(9, "User with most activities in december 2008:", string_list)
 
     # Nr. 10
     def tot_dist_in_2008_by_user_112(self):
@@ -457,7 +426,7 @@ class Queries:
                         "start_time": "$start_time"
                     }
                 },
-                {"$sort": {"start_time": -1}}
+                {"$sort": {"start_time": 1}}
             ], allowDiskUse=True)
 
             tp_list = list(tp_for_user)

@@ -1,6 +1,3 @@
-import os
-import sys
-import uuid
 import math
 from datetime import datetime
 import pymongo
@@ -8,8 +5,7 @@ from haversine import haversine
 import pandas
 import pymongo
 from IPython.lib.pretty import pprint
-from bson.son import SON
-
+from haversine import haversine
 from DbConnector import DbConnector
 
 
@@ -88,39 +84,47 @@ class Queries:
             print(f"Id: {i['_id']}, Number of activities: {i['count']}")
 
     # Nr. 4
-    def get_num_midnight_active_people(self):
+    def get_nr_users_with_multiple_day_activities(self):
         """Calculate the difference between end and start for each activity (in milliseconds),
             and divide by number of milliseconds in a day.
             Return all activities with that difference greater than or equal
             to a day.
-
         """
         num_midnight_active = self.db["activities"].aggregate([
             {
                 "$project":
                     {
-                        "_id": "$user_id",
-                        "activity_id": "$id",
-                        "start_date": "$start_time",
-                        "end_date": "$end_time",
-                        "dateDifference": {
-                            "$divide": [{"$subtract": ["$end_time", "$start_time"]}, 86400000]}
+                        "_id": "$id",
+                        "activity_id": "$activity",
+                        "user_id": "$user_id",
+                        "start_time": "$start_time",
+                        "end_time": "$end_time",
+                        "start_day": {"$dayOfYear": "$start_time"},
+                        "end_day": {"$dayOfYear": "$end_time"},
                     }
             },
             {
-                "$match": {"dateDifference": {"$gte": 1}}
+                "$match": {"$expr": {"$ne": ["$end_day", "$start_day"]}}
+            },
+
+            {
+                "$group": {
+                    "_id": {"users": "$user_id"},
+                    "count": {"$sum": 1}
+                }
+            },
+            {"$project": {
+                "users": "$_id.users"
             }
+            },
+            {"$group": {"_id": "users", "count": {"$sum": 1}}
+             },
         ])
 
-        counter = 0
         for i in num_midnight_active:
-            counter += 1
-            print(f"id: {i['_id']}, start_date: {i['start_date'].isoformat()}, end_date: {i['end_date'].isoformat()}")
-
-        print("Number of activities that start one day and ends the next: ", counter)
+            print(f"Number of activities that start one day and ends the next: {i['count']}")
 
     # Nr. 5
-
     def get_activities_reg_mult_times(self):
         a = self.db["activities"].aggregate([
             {
@@ -145,46 +149,87 @@ class Queries:
 
     # Nr. 6
     def get_possibly_infected_people(self):
-
-        print("hei")
-        self.db.track_points.create_index([("location", pymongo.GEOSPHERE)])
-        print("hei")
-        possibly_infected_people = self.db["track_points"].aggregate([
+        date_to_match = datetime.strptime('2008-08-24 15:38:00', "%Y-%m-%d %H:%M:%S")
+        point_to_match = (39.97548, 116.33031)
+        possibly_infected_people = []
+        points_for_users_matching_date = self.db["track_points"].aggregate([
             {
-                "$geoNear": {
-                    "near": {"type": "Point", "coordinates": [39.97548, 116.33031]},
-                    "key": "location",
-                    "distanceField": "calculated",
-                    "maxDistance": 60,
-                    "spherical": True
+                "$group": {
+                    "_id": "$user_id",
+                    "time_match_trackpoint": {
+                        "$push": {
+                            "$cond": [
+                                {"$lte": [{"$abs": {"$divide": [{"$subtract": ["$start_time", date_to_match]}, 60000]}},
+                                          60]},
+                                "$location.coordinates",
+                                "$$REMOVE"
+                            ]
+                        }
+                    }
                 }
+            },
+            {
+                "$match": {
+                    "$expr": {"$ne": [{"$size": "$time_match_trackpoint"}, 0]}
+                },
             }
-        ])
+        ], allowDiskUse=True)
 
-        print("hei")
-        for i in possibly_infected_people:
-            print("i")
-            print(i)
+        for i in points_for_users_matching_date:
+            for user_point in i["time_match_trackpoint"]:
+                if (haversine(tuple(user_point), point_to_match, unit='m') <= 100) and (
+                        i['_id'] not in possibly_infected_people):
+                    possibly_infected_people.append(i['_id'])
+
+        for j in range(0, len(possibly_infected_people) - 4, 4):
+            print(possibly_infected_people[j:j + 4])
 
     # Nr. 7
     def get_non_taxi_users(self):
-        # To metoder. Vet ikke hvilken som blir riktig.
 
-        # (All users) - (all users who have taken a taxi) = (all users who have not taken a taxi)
-        users = self.db["user"].find().distinct("id")
-        taxi_users = self.db["activities"].find({"transportation_mode": "taxi"}).distinct("user_id")
-        non_taxi_users = sorted(list(set(users) - set(taxi_users)))
-        print(f"Nr. of users never taken a taxi ({len(non_taxi_users)} in total):\n")
-        for i in range(0, len(non_taxi_users) - 4, 4):
-            print(non_taxi_users[i:i + 4])
+        non_taxi_users = self.db["activities"].aggregate([
+            {
+                "$group": {
+                    "_id": "$user_id",
+                    "taxi_or_not_arr": {
+                        "$push": {
+                            "$cond": [
+                                {"$eq": ["$transportation_mode", "taxi"]},
+                                "taxi",
+                                None
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "$project": {
+                    "taxi_or_not_arr": {"$setDifference": ["$taxi_or_not_arr", [None]]}
+                }
+            },
+            {
+                "$match": {
+                    "$expr": {"$eq": [{"$size": "$taxi_or_not_arr"}, 0]}
+                },
 
-        # Find all (distinct) user_id in activities where transportation mode is not taxi
-        # Denne er muligens feil: en bruker kan ha både aktiviteter uten taxi og aktiviteter med taxi =>
-        # da kan det hende det hentes ut fordi han har en eller flere aktiviteter uten taxi
-        non_taxi_users_2 = self.db["activities"].find({"transportation_mode": {"$ne": "taxi"}}).distinct("user_id")
-        print(f"Nr. of users never taken a taxi ({len(non_taxi_users_2)} in total):\n")
-        for i in range(0, len(non_taxi_users_2) - 4, 4):
-            print(non_taxi_users_2[i:i + 4])
+            },
+            {
+                "$group": {
+                    "_id": "$_id"
+                }
+            },
+            {"$sort": {"_id": 1}}
+        ])
+
+        print("Users who have never taken a taxi:")
+        printcount = 1
+        for i in non_taxi_users:
+            if printcount % 6 == 0:
+                print(f"{i['_id']},")
+            else:
+                print(f"{i['_id']},", end=" ")
+            printcount += 1
+        print("")
 
     # Nr. 8
     def count_users_per_trasnp_mode(self):
@@ -268,8 +313,6 @@ class Queries:
             print(f"month: {months[i['_id'] - 1]}, num activities: {i['max_activities']}")
 
     # Nr. 9b
-    # Is 405 hours for user 062 and 1931 hours for user 128 too much?
-    # double check this
     def user_most_activities_specific_year_month(self):
         user = self.db["activities"].aggregate([
             {
@@ -303,22 +346,24 @@ class Queries:
 
         hours = self.db["activities"].aggregate([
             {
-                "$match": {
-                    "user_id": {"$in": user_ids}
-                }
-            },
-            {
                 "$project": {
                     "_id": "$user_id",
-                    "act_id": "$id",
                     "start": "$start_time",
-                    "end": "$end_time",
+                    "year_to_match": {"$year": "$start_time"},
+                    "month_to_match": {"$month": "$start_time"},
                     "hours_per_activity": {
                         "$divide": [{"$subtract": ["$end_time", "$start_time"]}, 3600000]
                     },
                 }
             },
-            {"$sort": {"start": -1}},
+            {
+                "$match": {
+                    "_id": {"$in": user_ids},
+                    "year_to_match": 2008,
+                    "month_to_match": 11
+                }
+            },
+            {"$sort": {"start": 1}},
             {
                 "$group": {
                     "_id": "$_id",
@@ -331,18 +376,66 @@ class Queries:
 
     # Nr. 10
     def tot_dist_in_2008_by_user_112(self):
-        pass
+        activities = self.db["activities"].aggregate([
+            {
+                "$match": {
+                    "transportation_mode": "walk",
+                    "user_id": "112"
+                },
+            },
+            {
+                "$project": {
+                    "_id": "$id"
+                }
+            }
+        ])
 
+        act_id = [activity["_id"] for activity in activities]
+        print(len(act_id))
+
+        track_points = self.db["track_points"].aggregate([
+            {
+                "$match": {
+                    "activity": {"$in": act_id}}
+            },
+            {
+                "$project": {
+                    "id": "$user_id",
+                    "start_year": {"$year": "$start_time"},
+                    "latlon": "$location.coordinates",
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$id",
+                    "lat_lons": {
+                        "$push": {
+                            "$cond": [
+                                {"$eq": ["$start_year", 2008]},
+                                "$latlon",
+                                None
+                            ]
+                        }
+                    }
+                }
+            }
+
+        ])
+        dist = 0
+        for i in track_points:
+            print(len(i["lat_lons"]))
+            for j in range(0, len(i["lat_lons"]) - 1):
+                dist += haversine(tuple(i["lat_lons"][j - 1]), tuple(i["lat_lons"][j]))
+        print(f"User 112 walked {dist} km in 2008")
 
     # Nr. 11
-    def mile_high_club(self):
-        # NOT FINISHED!
-        users = self.db["user"].find()
+    def top_20_attitude_gain_users(self):
+
+        users_ids = self.db["track_points"].distinct("user_id")
 
         accumulated_altitudes = []
 
-        for user in users:
-            user_id = user["id"]
+        for user_id in users_ids:
 
             tp_for_user = self.db["track_points"].aggregate([
                 {
@@ -350,22 +443,30 @@ class Queries:
                         "user_id": user_id
                     }
                 },
+                {
+                    "$project": {
+                        "_id": "$user_id",
+                        "activity_id": "$activity",
+                        "altitude": "$altitude",
+                        "start_time": "$start_time"
+                    }
+                },
+                {"$sort": {"start_time": -1}}
+            ], allowDiskUse=True)
 
-            ])
+            tp_list = list(tp_for_user)
             current_user_altitude_sum = 0
-            for i in range(1, len(list(tp_for_user))):
-                if tp_for_user["altitude"] != -777:
-                    current_user_altitude_sum += (tp_for_user[i]["altitude"] - tp_for_user[i - 1]["altitude"])
-                accumulated_altitudes.append(current_user_altitude_sum)
-            print(accumulated_altitudes)
-            """
-            current_user_altitude_sum = 0
-            # https://stackoverflow.com/questions/9789601/pymongo-doesnt-iterate-over-collection
-            for doc in tp_for_user[:-2]:
-                if tp_for_user["altitude"] != -777:
-                    current_user_altitude_sum += (tp_for_user[i]["altitude"] - tp_for_user[i - 1]["altitude"])
-            accumulated_altitudes.append(current_user_altitude_sum)
-            """
+            for i in range(1, len(tp_list)):
+                if (tp_list[i - 1]["altitude"] != -777) and (tp_list[i]["altitude"] != -777) \
+                        and (tp_list[i - 1]["altitude"] < tp_list[i]["altitude"]):
+                    if tp_list[i - 1]["activity_id"] == tp_list[i]["activity_id"]:
+                        current_user_altitude_sum += (tp_list[i]["altitude"] - tp_list[i - 1]["altitude"])
+            print(user_id, "done")
+            accumulated_altitudes.append((user_id, current_user_altitude_sum))
+            sorted(accumulated_altitudes, key=lambda x: x[1])
+        print("Top 20 users with highest altitude gained:")
+        for i in accumulated_altitudes[:20]:
+            print(f"id: {i[0]}, altitude gained: {i[1]}")
 
     # Nr. 12
     def get_all_users_with_invalid_activities(self):

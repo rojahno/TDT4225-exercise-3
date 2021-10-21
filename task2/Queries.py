@@ -401,48 +401,56 @@ class Queries:
         for i in track_points:
             for j in range(0, len(i["lat_lons"]) - 1):
                 dist += haversine(tuple(i["lat_lons"][j - 1]), tuple(i["lat_lons"][j]))
-        answer_print(10, f"User 112 walked {dist} km in 2008")
+        answer_print(10, f"User 112 walked {round(dist, 2)} km in 2008")
 
     # Nr. 11
     def top_20_attitude_gain_users(self):
 
-        users_ids = self.db["track_points"].distinct("user_id")
+        track_points = self.db["track_points"].aggregate([
+            {
+                "$project": {
+                    "_id": "$id",
+                    "activity": "$activity",
+                    "altitude": "$altitude",
+                    "user_id": "$user_id",
+                    "list_position": "$list_position"
+                }
+            },
+            {"$sort": {"user_id": 1}},
 
-        accumulated_altitudes = []
+        ], allowDiskUse=True)
+        user_dict = {}
+        prev_point = None
+        current_activity = None
+        current_user = None
+        point: dict
+        for point in track_points:
+            if point['user_id'] != current_user:
+                current_user = point['user_id']
+            if point['activity'] != current_activity:
+                current_activity = point['activity']
+                prev_point = None
 
-        for user_id in users_ids:
+            if prev_point is None:
+                prev_point = point
 
-            tp_for_user = self.db["track_points"].aggregate([
-                {
-                    "$match": {
-                        "user_id": user_id
-                    }
-                },
-                {
-                    "$project": {
-                        "_id": "$user_id",
-                        "activity_id": "$activity",
-                        "altitude": "$altitude",
-                        "start_time": "$start_time"
-                    }
-                },
-                {"$sort": {"start_time": 1}}
-            ], allowDiskUse=True)
-
-            tp_list = list(tp_for_user)
-            current_user_altitude_sum = 0
-            for i in range(1, len(tp_list)):
-                if (tp_list[i - 1]["altitude"] != -777) and (tp_list[i]["altitude"] != -777) \
-                        and (tp_list[i - 1]["altitude"] < tp_list[i]["altitude"]):
-                    if tp_list[i - 1]["activity_id"] == tp_list[i]["activity_id"]:
-                        current_user_altitude_sum += (tp_list[i]["altitude"] - tp_list[i - 1]["altitude"])
-            print(user_id, "done")
-            accumulated_altitudes.append((user_id, current_user_altitude_sum))
-            accumulated_altitudes = sorted(accumulated_altitudes, key=lambda x: x[1], reverse=True)
-        string_list = []
-        for i in accumulated_altitudes[:20]:
-            string_list.append(f"id: {i[0]}, altitude gained: {i[1]}")
-        answer_print(11, "Top 20 users with highest altitude gained:", string_list)
+            else:
+                prev_altitude: datetime = prev_point['altitude']
+                current_altitude: datetime = point['altitude']
+                if (current_altitude > prev_altitude) and (prev_altitude != -777) and (current_altitude != -777):
+                    altitude_gain = current_altitude - prev_altitude
+                    if current_user in user_dict.keys():
+                        prev_altitude_gain = user_dict[current_user]
+                        user_dict.update({current_user: prev_altitude_gain + altitude_gain})
+                        if current_user == "128":
+                            print(f'prev point: {prev_point}, current point: {point}')
+                            print(f'prev value: {prev_altitude_gain}, new gain: {altitude_gain}')
+                            print()
+                    else:
+                        user_dict[current_user] = altitude_gain
+                prev_point = point
+        altitude_gain_list = sorted(user_dict.items(), key=lambda x: x[1], reverse=True)
+        answer_print(11, "Top 20 users with most altitude gain", altitude_gain_list)
 
     # Nr. 12
     def get_all_users_with_invalid_activities(self):

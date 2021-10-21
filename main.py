@@ -45,7 +45,7 @@ def task_2():
     query.get_activities_reg_mult_times()
 
     # Q6: Find possibly infected people
-    query.get_possibly_infected_people()
+     #query.get_possibly_infected_people()
 
     # Q7: get users who've never taken a taxi
     query.get_non_taxi_users()
@@ -66,7 +66,7 @@ def task_2():
     query.top_20_attitude_gain_users()
 
     # Q12: Get all invalid activities
-    query.get_all_users_with_invalid_activities()
+    # query.get_all_users_with_invalid_activities()
 
     timed = str(datetime.timedelta(seconds=(time.time() - start))).split(':')
     print(f'Time elapsed: {timed[0]} hours, {timed[1]} minutes, {timed[2]} seconds')

@@ -39,7 +39,7 @@ def task_2():
     # query.get_10_users_highest_num_act()
 
     # Find the number of users who started an activity one day, and ended it the next
-    # query.get_num_midnight_active_people()
+    query.get_num_midnight_active_people()
 
     # Find duplicate activities
     # query.get_activities_reg_mult_times()
@@ -50,8 +50,9 @@ def task_2():
     # get users who've never taken a taxi
     # query.get_non_taxi_users()
 
+
     # Get all invalid activities
-    query.get_all_users_with_invalid_activities()
+    # query.get_all_users_with_invalid_activities()
 
     # distinct users that have taken each (non-null) transportation mode
     # query.count_users_per_trasnp_mode()

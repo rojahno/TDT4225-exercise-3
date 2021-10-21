@@ -99,21 +99,37 @@ class Queries:
             {
                 "$project":
                     {
-                        "_id": "$user_id",
-                        "activity_id": "$id",
-                        "start_date": "$start_time",
-                        "end_date": "$end_time",
-                        "dateDifference": {
-                            "$divide": [{"$subtract": ["$end_time", "$start_time"]}, 86400000]}
+                        "_id": "$id",
+                        "activity_id": "$activity",
+                        "user_id": "$user_id",
+                        "start_time": "$start_time",
+                        "end_time": "$end_time",
+                        "start_day": {"$dayOfYear": "$start_time"},
+                        "end_day": {"$dayOfYear": "$end_time"},
                     }
             },
             {
-                "$match": {"dateDifference": {"$gte": 1}}
-            }
-        ])
+                "$match": {"$expr": {"$ne": ["$end_day", "$start_day"]}}
+            },
 
-        for i in num_midnight_active:
-            print(f"id: {i['_id']}, start_date: {i['start_date'].isoformat()}, end_date: {i['end_date'].isoformat()}")
+            {
+                "$group": {
+                    "_id": {"users": "$user_id"},
+                    "count": {"$sum": 1}
+                }
+            },
+            {"$project": {
+                "users": "$_id.users"
+            }
+            },
+            {"$group": {"_id": "users", "count": {"$sum": 1}}
+             },
+
+            {"$sort": {"_id": 1}},
+        ])
+        print(list(num_midnight_active))
+        # for i in num_midnight_active:
+        #   print(f"id: {i['_id']}, start_date: {i['start_time'].isoformat()}, end_date: {i['end_time'].isoformat()}")
 
     # Nr. 5
 
@@ -165,6 +181,7 @@ class Queries:
         # (All users) - (all users who have taken a taxi) = (all users who have not taken a taxi)
         users = self.db["user"].find().distinct("id")
         taxi_users = self.db["activities"].find({"transportation_mode": "taxi"}).distinct("user_id")
+        print(taxi_users)
         non_taxi_users = sorted(list(set(users) - set(taxi_users)))
         print(f"Nr. of users never taken a taxi ({len(non_taxi_users)} in total):\n")
         for i in range(0, len(non_taxi_users) - 4, 4):

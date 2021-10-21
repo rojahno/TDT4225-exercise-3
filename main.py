@@ -24,22 +24,22 @@ def task_2():
     query = Queries()
 
     # Get number of users
-    #query.get_num_user()
+    # query.get_num_user()
 
     # Get number of activities
     #query.get_num_activities()
 
     # Get number of trackpoints
-    # query.get_num_trackpoints()
+    #query.get_num_trackpoints()
 
     # get avg, min, max of activities
-    # query.get_avg_min_max_act_per_user()
+    #query.get_avg_min_max_act_per_user()
 
     # Find the top 10 users with the highest number of activities
-    # query.get_10_users_highest_num_act()
+    #query.get_10_users_highest_num_act()
 
     # Find the number of users who started an activity one day, and ended it the next
-    # query.get_num_midnight_active_people()
+    query.get_num_midnight_active_people()
 
 
     # Find duplicate activities
@@ -67,7 +67,7 @@ def task_2():
     # query.user_most_activities_specific_year_month()
 
     # total walked distance in 2008 by user 112
-    query.tot_dist_in_2008_by_user_112()
+    #query.tot_dist_in_2008_by_user_112()
 
     #top 20 users who have gained most altitude meters
     #query.mile_high_club()

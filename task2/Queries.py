@@ -96,7 +96,6 @@ class Queries:
 
         """
         num_midnight_active = self.db["activities"].aggregate([
-
             {
                 "$project":
                     {
@@ -113,8 +112,12 @@ class Queries:
             }
         ])
 
+        counter = 0
         for i in num_midnight_active:
+            counter += 1
             print(f"id: {i['_id']}, start_date: {i['start_date'].isoformat()}, end_date: {i['end_date'].isoformat()}")
+
+        print("Number of activities that start one day and ends the next: ", counter)
 
     # Nr. 5
 
@@ -328,23 +331,8 @@ class Queries:
 
     # Nr. 10
     def tot_dist_in_2008_by_user_112(self):
-        print("---start---")
-        activities = self.db["activities"].find(
-            {
-                "user_id": 112,
-                "transportation_mode": 'walk',
-                "start_time": {
-                    "$gte": datetime(2008, 1, 1),
-                    "$lte": datetime(2008, 12, 31)
-                }
-            }
-        )
+        pass
 
-        
-
-        total_distance = 0
-
-        print("Totalt distance for user: 112 in 2008 is:", total_distance)
 
     # Nr. 11
     def mile_high_club(self):

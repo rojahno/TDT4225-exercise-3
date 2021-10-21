@@ -3,6 +3,7 @@ import sys
 import uuid
 
 from DbConnector import DbConnector
+import datetime
 
 """
 Handles the database setup.
@@ -28,6 +29,7 @@ class DatabaseSetup:
         self.create_coll("user")
         self.create_coll("activities")
         self.create_coll("track_points")
+        self.create_coll("counters")
 
     def drop_coll(self, collection_name):
         collection = self.db[collection_name]
@@ -131,11 +133,22 @@ class DatabaseSetup:
         transportation_mode = "".join(values[4])
         start_time = start_time.replace("/", "-")
         end_time = end_time.replace("/", "-")
+        start_time = datetime.datetime.strptime(
+            start_time,
+            "%Y-%m-%d %H:%M:%S"
+        )
+        end_time = datetime.datetime.strptime(
+            end_time,
+            "%Y-%m-%d %H:%M:%S"
+        )
         return start_time, end_time, transportation_mode
 
     def format_trajectory_time(self, label: str):
         values = label.split(",")
-        time = "".join((values[5], " ", values[6]))
+        time = datetime.datetime.strptime(
+            "".join((values[5], " ", values[6])),
+            "%Y-%m-%d %H:%M:%S"
+        )
         return time
 
     def format_trajectory_line(self, line: str):
@@ -147,11 +160,14 @@ class DatabaseSetup:
         @rtype: str
         """
         values = line.split(",")
-        latitude = values[0]
-        longitude = values[1]
-        altitude = values[3]
-        days_passed = values[4]
-        start_time = "".join((values[5].replace('-', '/'), " ", values[6]))
+        latitude = float(values[0])
+        longitude = float(values[1])
+        altitude = float(values[3])
+        days_passed = float(values[4])
+        start_time = datetime.datetime.strptime(
+            "".join((values[5].replace('-', '/'), " ", values[6])).rstrip(),
+            "%Y/%m/%d %H:%M:%S"
+        )
         return latitude, longitude, altitude, days_passed, start_time
 
     def create_activity(self, root, file):
@@ -239,13 +255,23 @@ class DatabaseSetup:
 
                             for read in range(6):
                                 f.readline()
-
+                            list_position = 0
                             for line in f:
+                                list_position += 1
                                 latitude, longitude, altitude, days_passed, start_time = \
                                     self.format_trajectory_line(line)
                                 track_point_list.append(
-                                    {'activity': activity['id'], 'latitude': latitude, 'longitude': longitude,
-                                     'altitude': altitude, 'days_passed': days_passed, 'start_time': start_time})
+                                    {
+                                        'user_id': user['id'],
+                                        'activity': activity['id'],
+                                        'list_position': list_position,
+                                        'location': {
+                                            'type': 'Point',
+                                            'coordinates': [latitude, longitude]
+                                        },
+                                        'altitude': altitude,
+                                        'days_passed': days_passed,
+                                        'start_time': start_time})
                         self.batch_insert_track_points(track_point_list)
 
     def insert_user(self, user: dict):

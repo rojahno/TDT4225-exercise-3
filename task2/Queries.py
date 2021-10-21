@@ -86,7 +86,7 @@ class Queries:
             Return all activities with that difference greater than or equal
             to a day.
         """
-        num_midnight_active = self.db["activities"].aggregate([
+        num_multiple_day_activities = self.db["activities"].aggregate([
             {
                 "$project":
                     {
@@ -117,8 +117,8 @@ class Queries:
              },
         ])
 
-        for i in num_midnight_active:
-            print(f"Number of activities that start one day and ends the next: {i['count']}")
+        answer_print(4,
+                     f"Number of activities that start one day and ends the next: {num_multiple_day_activities.next()['count']}")
 
     # Nr. 5
     def get_activities_reg_mult_times(self):
@@ -179,9 +179,10 @@ class Queries:
                     possibly_infected_people.append(i['_id'])
                     break
 
-        print("Possibly infected users:")
+        string_list = []
         for user in possibly_infected_people:
-            print(user)
+            string_list.append(user)
+        answer_print(6, "Possibly infected users:", string_list)
 
     # Nr. 7
     def get_non_taxi_users(self):
@@ -348,7 +349,7 @@ class Queries:
         user: dict
         for user in users:
             string_list.append(
-                f'User {user["_id"]} have {user["activities_per_user"]} activities, and {round(user["hourSum"],2)} hours ')
+                f'User {user["_id"]} have {user["activities_per_user"]} activities, and {round(user["hourSum"], 2)} hours ')
         answer_print(9, "User with most activities in december 2008:", string_list)
 
     # Nr. 10
@@ -395,13 +396,12 @@ class Queries:
                     }
                 }
             }
-
         ])
         dist = 0
         for i in track_points:
             for j in range(0, len(i["lat_lons"]) - 1):
                 dist += haversine(tuple(i["lat_lons"][j - 1]), tuple(i["lat_lons"][j]))
-        print(f"User 112 walked {dist} km in 2008")
+        answer_print(10, f"User 112 walked {dist} km in 2008")
 
     # Nr. 11
     def top_20_attitude_gain_users(self):

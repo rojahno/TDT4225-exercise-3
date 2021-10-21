@@ -30,7 +30,7 @@ def task_2():
     #query.get_num_activities()
 
     # Get number of trackpoints
-    # query.get_num_trackpoints()
+    query.get_num_trackpoints()
 
     # get avg, min, max of activities
     # query.get_avg_min_max_act_per_user()
@@ -39,16 +39,20 @@ def task_2():
     # query.get_10_users_highest_num_act()
 
     # Find the number of users who started an activity one day, and ended it the next
-    # query.get_num_midnight_active_people()
+    query.get_num_midnight_active_people()
 
     # Find duplicate activities
     # query.get_activities_reg_mult_times()
 
     # Find possibly infected people
-    #query.get_possibly_infected_people()
+    # query.get_possibly_infected_people()
 
     # get users who've never taken a taxi
     # query.get_non_taxi_users()
+
+
+    # Get all invalid activities
+    # query.get_all_users_with_invalid_activities()
 
     # distinct users that have taken each (non-null) transportation mode
     # query.count_users_per_trasnp_mode()

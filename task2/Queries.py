@@ -5,11 +5,13 @@ import math
 from datetime import datetime
 from haversine import haversine
 
+import pandas
 import pymongo
+from IPython.lib.pretty import pprint
 from bson.son import SON
 
-
 from DbConnector import DbConnector
+
 
 class Queries:
 
@@ -98,21 +100,37 @@ class Queries:
             {
                 "$project":
                     {
-                        "_id": "$user_id",
-                        "activity_id": "$id",
-                        "start_date": "$start_time",
-                        "end_date": "$end_time",
-                        "dateDifference": {
-                            "$divide": [{"$subtract": ["$end_time", "$start_time"]}, 86400000]}
+                        "_id": "$id",
+                        "activity_id": "$activity",
+                        "user_id": "$user_id",
+                        "start_time": "$start_time",
+                        "end_time": "$end_time",
+                        "start_day": {"$dayOfYear": "$start_time"},
+                        "end_day": {"$dayOfYear": "$end_time"},
                     }
             },
             {
-                "$match": {"dateDifference": {"$gte": 1}}
-            }
-        ])
+                "$match": {"$expr": {"$ne": ["$end_day", "$start_day"]}}
+            },
 
-        for i in num_midnight_active:
-            print(f"id: {i['_id']}, start_date: {i['start_date'].isoformat()}, end_date: {i['end_date'].isoformat()}")
+            {
+                "$group": {
+                    "_id": {"users": "$user_id"},
+                    "count": {"$sum": 1}
+                }
+            },
+            {"$project": {
+                "users": "$_id.users"
+            }
+            },
+            {"$group": {"_id": "users", "count": {"$sum": 1}}
+             },
+
+            {"$sort": {"_id": 1}},
+        ])
+        print(list(num_midnight_active))
+        # for i in num_midnight_active:
+        #   print(f"id: {i['_id']}, start_date: {i['start_time'].isoformat()}, end_date: {i['end_time'].isoformat()}")
 
     # Nr. 5
 
@@ -493,4 +511,51 @@ class Queries:
         for i in accumulated_altitudes[:20]:
             print(f"id: {i[0]}, altitude gained: {i[1]}")
 
-        # Nr. 12
+    # Nr. 12
+    def get_all_users_with_invalid_activities(self):
+        print('Task 12')
+        track_points = self.db["track_points"].aggregate([
+            {
+                "$project": {
+                    "_id": "$id",
+                    "activity": "$activity",
+                    "start_time": "$start_time",
+                    "user_id": "$user_id",
+                    "list_position": "$list_position"
+                }
+            },
+            {"$sort": {"activity": 1}},
+
+        ], allowDiskUse=True)
+        user_dict = {}
+        prev_point = None
+        current_activity = ""
+        found_invalid = False
+        point: dict
+        for point in track_points:
+            if point['activity'] != current_activity:
+                found_invalid = False
+                current_activity = point['activity']
+                prev_point = None
+
+            if found_invalid is True:
+                continue
+
+            if prev_point is None:
+                prev_point = point
+
+            else:
+                prev_time: datetime = prev_point['start_time']
+                current_time: datetime = point['start_time']
+                difference = current_time - prev_time
+                if difference.seconds >= 300:
+                    found_invalid = True
+                    user_id: str = point['user_id']
+                    if user_id in user_dict.keys():
+                        prev_invalid_count = user_dict[user_id]
+                        user_dict.update({user_id: prev_invalid_count + 1})
+                    else:
+                        user_dict[user_id] = 1
+                prev_point = point
+        pprint(sorted(user_dict.items()))
+

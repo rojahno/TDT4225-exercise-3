@@ -172,6 +172,7 @@ class DatabaseSetup:
         end_time = self.format_trajectory_time(last_line)
         activity_id = str(uuid.uuid4())
         date_key = tuple((start_time, end_time))
+
         if user_id in labeled_users:
             if date_key in self.labels_dict[user_id]:
                 transportation_mode = self.labels_dict[user_id][date_key]
@@ -197,14 +198,17 @@ class DatabaseSetup:
         """
         for root, dirs, files in os.walk('dataset/dataset/Data', topdown=True):
             for file in files:
+
                 if file == "labels.txt":
                     with open(os.path.join(root, file)) as f:
                         f.readline()  # removes the first line containing descriptions.
                         labeled_users = self.get_user_label()
                         user_id = os.path.basename(os.path.basename(root))
+
                         # if user-id (e.g. 082) isn't a key in label-dict, add it empty dict as value
                         if (user_id not in self.labels_dict) and (user_id in labeled_users):
                             self.labels_dict[user_id] = {}
+
                         for line in f:
                             start_time, end_time, transportation_mode = self.format_label_line(line)
                             # Assuming label dates (together) are unique => add label-dates-tuple as key, with
@@ -226,13 +230,16 @@ class DatabaseSetup:
                 self.insert_user(user)
                 for file in files:
                     path = os.path.join(root, file)  # The current path
+
                     if self.is_plt_file(self.get_extension(path)) and self.get_nr_of_lines(path) <= 2500:
                         track_point_list = []  # A list to batch insert the trajectories
                         activity = self.create_activity(root, file)
                         self.insert_activity(activity)  # Inserts the activity into the database
                         with open(os.path.join(root, file)) as f:  # opens the current file
+
                             for read in range(6):
                                 f.readline()
+
                             for line in f:
                                 latitude, longitude, altitude, days_passed, start_time = \
                                     self.format_trajectory_line(line)

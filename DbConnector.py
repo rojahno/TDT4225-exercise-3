@@ -24,7 +24,6 @@ class DbConnector:
                  PASSWORD=os.getenv('PASSWORD')):
 
         uri = "mongodb://%s:%s@%s/%s" % (USER, PASSWORD, HOST, DATABASE)
-        print(uri)
         # Connect to the databases
         try:
             self.client = MongoClient(uri)

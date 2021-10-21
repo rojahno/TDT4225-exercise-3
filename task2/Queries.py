@@ -457,6 +457,7 @@ class Queries:
         for point in track_points:
             if point['user_id'] != current_user:
                 current_user = point['user_id']
+
             if point['activity'] != current_activity:
                 current_activity = point['activity']
                 prev_point = None
@@ -468,7 +469,7 @@ class Queries:
                 prev_altitude = prev_point['altitude']
                 current_altitude = point['altitude']
                 if (current_altitude > prev_altitude) and (prev_altitude != -777) and (current_altitude != -777):
-                    altitude_gain = round(current_altitude - prev_altitude)
+                    altitude_gain = (current_altitude - prev_altitude) * 0.32808
                     if current_user in user_dict.keys():
                         prev_altitude_gain = user_dict[current_user]
                         user_dict.update({current_user: prev_altitude_gain + altitude_gain})

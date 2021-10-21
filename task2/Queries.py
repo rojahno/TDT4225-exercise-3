@@ -1,15 +1,7 @@
-import os
-import sys
-import uuid
 import math
 from datetime import datetime
-from haversine import haversine
-
-import pandas
-import pymongo
 from IPython.lib.pretty import pprint
-from bson.son import SON
-
+from haversine import haversine
 from DbConnector import DbConnector
 
 
@@ -88,12 +80,11 @@ class Queries:
             print(f"Id: {i['_id']}, Number of activities: {i['count']}")
 
     # Nr. 4
-    def get_num_midnight_active_people(self):
+    def get_nr_users_with_multiple_day_activities(self):
         """Calculate the difference between end and start for each activity (in milliseconds),
             and divide by number of milliseconds in a day.
             Return all activities with that difference greater than or equal
             to a day.
-
         """
         num_midnight_active = self.db["activities"].aggregate([
 
@@ -168,7 +159,8 @@ class Queries:
                     "time_match_trackpoint": {
                         "$push": {
                             "$cond": [
-                                {"$lte": [{"$abs": {"$divide": [{"$subtract": ["$start_time", date_to_match]}, 60000]}}, 60]},
+                                {"$lte": [{"$abs": {"$divide": [{"$subtract": ["$start_time", date_to_match]}, 60000]}},
+                                          60]},
                                 "$location.coordinates",
                                 "$$REMOVE"
                             ]
@@ -185,26 +177,14 @@ class Queries:
 
         ], allowDiskUse=True)
 
-        """self.db.track_points.create_index([("location", pymongo.GEOSPHERE)])
-        possibly_infected_people = self.db["track_points"].aggregate([
-            {
-                "$geoNear": {
-                    "near": {"type": "Point", "coordinates": [39.97548, 116.33031]},
-                    "key": "location",
-                    "distanceField": "calculated",
-                    "maxDistance": 60,
-                    "spherical": True
-                }
-            }
-        ])"""
-
         for i in points_for_users_matching_date:
             for user_point in i["time_match_trackpoint"]:
-                if (haversine(tuple(user_point), point_to_match, unit='m') <= 100) and (i['_id'] not in possibly_infected_people):
+                if (haversine(tuple(user_point), point_to_match, unit='m') <= 100) and (
+                        i['_id'] not in possibly_infected_people):
                     possibly_infected_people.append(i['_id'])
 
-        for j in range(0, len(possibly_infected_people)-4, 4):
-            print(possibly_infected_people[j:j+4])
+        for j in range(0, len(possibly_infected_people) - 4, 4):
+            print(possibly_infected_people[j:j + 4])
 
     # Nr. 7
     def get_non_taxi_users(self):
@@ -231,7 +211,7 @@ class Queries:
             },
             {
                 "$match": {
-                    "$expr": {"$eq":  [{"$size": "$taxi_or_not_arr"}, 0]}
+                    "$expr": {"$eq": [{"$size": "$taxi_or_not_arr"}, 0]}
                 },
 
             },
@@ -253,25 +233,6 @@ class Queries:
             printcount += 1
         print("")
 
-        """
-        # To metoder. Vet ikke hvilken som blir riktig.
-
-        # (All users) - (all users who have taken a taxi) = (all users who have not taken a taxi)
-        users = self.db["user"].find().distinct("id")
-        taxi_users = self.db["activities"].find({"transportation_mode": "taxi"}).distinct("user_id")
-        non_taxi_users = sorted(list(set(users) - set(taxi_users)))
-        print(f"Nr. of users never taken a taxi ({len(non_taxi_users)} in total):\n")
-        for i in range(0, len(non_taxi_users) - 4, 4):
-            print(non_taxi_users[i:i + 4])
-
-        # Find all (distinct) user_id in activities where transportation mode is not taxi
-        # Denne er muligens feil: en bruker kan ha både aktiviteter uten taxi og aktiviteter med taxi =>
-        # da kan det hende det hentes ut fordi han har en eller flere aktiviteter uten taxi
-        non_taxi_users_2 = self.db["activities"].find({"transportation_mode": {"$ne": "taxi"} }).distinct("user_id")
-        print(f"Nr. of users never taken a taxi ({len(non_taxi_users_2)} in total):\n")
-        for i in range(0, len(non_taxi_users_2) - 4, 4):
-            print(non_taxi_users_2[i:i + 4])
-        """
     # Nr. 8
     def count_users_per_trasnp_mode(self):
         users_per_transp_mode = self.db["activities"].aggregate([
@@ -354,8 +315,6 @@ class Queries:
             print(f"month: {months[i['_id'] - 1]}, num activities: {i['max_activities']}")
 
     # Nr. 9b
-    # Is 405 hours for user 062 and 1931 hours for user 128 too much?
-    # double check this
     def user_most_activities_specific_year_month(self):
         user = self.db["activities"].aggregate([
             {
@@ -424,7 +383,7 @@ class Queries:
                 "$match": {
                     "transportation_mode": "walk",
                     "user_id": "112"
-                           },
+                },
             },
             {
                 "$project": {
@@ -442,12 +401,12 @@ class Queries:
                     "activity": {"$in": act_id}}
             },
             {
-               "$project": {
-                   "id": "$user_id",
-                   "start_year": {"$year": "$start_time"},
-                   "latlon": "$location.coordinates",
+                "$project": {
+                    "id": "$user_id",
+                    "start_year": {"$year": "$start_time"},
+                    "latlon": "$location.coordinates",
                 }
-             },
+            },
             {
                 "$group": {
                     "_id": "$id",
@@ -463,7 +422,7 @@ class Queries:
                 }
             }
 
-         ])
+        ])
         dist = 0
         for i in track_points:
             print(len(i["lat_lons"]))
@@ -472,7 +431,7 @@ class Queries:
         print(f"User 112 walked {dist} km in 2008")
 
     # Nr. 11
-    def mile_high_club(self):
+    def top_20_attitude_gain_users(self):
 
         users_ids = self.db["track_points"].distinct("user_id")
 
@@ -558,4 +517,3 @@ class Queries:
                         user_dict[user_id] = 1
                 prev_point = point
         pprint(sorted(user_dict.items()))
-

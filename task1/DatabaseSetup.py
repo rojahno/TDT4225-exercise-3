@@ -27,16 +27,20 @@ class DatabaseSetup:
         self.create_coll("user")
         self.create_coll("activities")
         self.create_coll("track_points")
-        self.create_coll("counters")
 
     def drop_coll(self, collection_name):
         collection = self.db[collection_name]
         collection.drop()
 
     def drop_all_coll(self):
-        self.drop_coll("user")
-        self.drop_coll("activities")
-        self.drop_coll("track_points")
+        print('Are you sure you would like to drop the collections? (Y/N)')
+        decision = input()
+        if decision == "Y" or decision == "y":
+            self.drop_coll("user")
+            self.drop_coll("activities")
+            self.drop_coll("track_points")
+        else:
+            print("No collections were dropped ")
 
     def show_coll(self):
         collections = self.client['test_db'].list_collection_names()
@@ -192,8 +196,12 @@ class DatabaseSetup:
                 'transportation_mode': None}
 
     def create_user(self, root):
+        """
+        Creates a new User
+        @param root: The path of the file
+        @type root: str
+        """
         user_id = os.path.basename(os.path.dirname(root))
-        print(user_id)
         user_label = self.get_user_label()
         has_label = False
         if user_id in user_label:

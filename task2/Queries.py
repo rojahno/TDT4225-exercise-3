@@ -62,6 +62,9 @@ class Queries:
 
     # Nr. 3
     def get_10_users_highest_num_act(self):
+        """
+        Finds the top 10 users with the highest number of activities.
+        """
         ten_best_users = self.db["activities"].aggregate([
             {
                 "$group": {
@@ -122,6 +125,9 @@ class Queries:
 
     # Nr. 5
     def get_activities_reg_mult_times(self):
+        """
+        Finds the activities that are registered multiple times.
+        """
         a = self.db["activities"].aggregate([
             {
                 "$group": {
@@ -146,6 +152,12 @@ class Queries:
 
     # Nr. 6
     def get_possibly_infected_people(self):
+        """
+        An infected person has been at position (lat, lon) (39.97548, 116.33031) at
+        time ‘2008-08-24 15:38:00’. This query finds the user_id(s) which have been close to this
+        person in time and space (pandemic tracking). Close is defined as the same minute
+        (60 seconds) and space (100 meters).
+        """
         date_to_match = datetime.strptime('2008-08-24 15:38:00', "%Y-%m-%d %H:%M:%S")
         point_to_match = (39.97548, 116.33031)
         possibly_infected_people = []
@@ -186,7 +198,9 @@ class Queries:
 
     # Nr. 7
     def get_non_taxi_users(self):
-
+        """
+        Finds all users that have never taken a taxi.
+        """
         non_taxi_users = self.db["activities"].aggregate([
             {
                 "$group": {
@@ -233,6 +247,10 @@ class Queries:
 
     # Nr. 8
     def count_users_per_trasnp_mode(self):
+        """
+        Finds all types of transportation modes and count how many distinct users that
+        have used the different transportation modes.
+        """
         users_per_transp_mode = self.db["activities"].aggregate([
             {
                 "$match": {
@@ -258,6 +276,9 @@ class Queries:
 
     # Nr. 9a
     def year_and_month_with_most_activities(self):
+        """
+        Find the year and month with the most activities.
+        """
         months = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october"
                                                                                                          "november",
                   "december"]
@@ -317,6 +338,10 @@ class Queries:
 
     # Nr. 9b
     def user_most_activities_specific_year_month(self):
+        """
+        Finds the two users who has the most activities the year
+        and month from 9a, and how many recorded hours they have?
+        """
         users = self.db["activities"].aggregate([
             {
                 "$project": {
@@ -354,6 +379,9 @@ class Queries:
 
     # Nr. 10
     def tot_dist_in_2008_by_user_112(self):
+        """
+        Finds the total distance (in km) walked in 2008, by user with id=112.
+        """
         activities = self.db["activities"].aggregate([
             {
                 "$match": {
@@ -405,7 +433,9 @@ class Queries:
 
     # Nr. 11
     def top_20_attitude_gain_users(self):
-
+        """
+         Finds the top 20 users who have gained the most altitude meters.
+        """
         track_points = self.db["track_points"].aggregate([
             {
                 "$project": {
@@ -442,18 +472,17 @@ class Queries:
                     if current_user in user_dict.keys():
                         prev_altitude_gain = user_dict[current_user]
                         user_dict.update({current_user: prev_altitude_gain + altitude_gain})
-                        if current_user == "128":
-                            print(f'prev point: {prev_point}, current point: {point}')
-                            print(f'prev value: {prev_altitude_gain}, new gain: {altitude_gain}')
-                            print()
                     else:
                         user_dict[current_user] = altitude_gain
                 prev_point = point
         altitude_gain_list = sorted(user_dict.items(), key=lambda x: x[1], reverse=True)
-        answer_print(11, "Top 20 users with most altitude gain", altitude_gain_list)
+        answer_print(11, "Top 20 users with most altitude gain", altitude_gain_list[0:20])
 
     # Nr. 12
     def get_all_users_with_invalid_activities(self):
+        """
+        Find all users who have invalid activities, and the number of invalid activities per user
+        """
         track_points = self.db["track_points"].aggregate([
             {
                 "$project": {

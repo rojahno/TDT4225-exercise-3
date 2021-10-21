@@ -8,7 +8,7 @@ def task_1():
     start = time.time()  # Starts the timer to see how much time has elapsed.
     setup = DatabaseSetup()  # Creates a database setup object
     setup.drop_all_coll()  # Drops the previous created collections
-    setup.create_all_collections()  # Creates user, activites and track points
+    setup.create_all_collections()  # Creates user, activities and track points
     setup.show_coll()  # Shows the collections
     setup.traverse_dataset()  # Traverses the dataset and inserts data into the collections
     print(f'Time elapsed: {str(datetime.timedelta(seconds=(time.time() - start)))}')  # Prints the time elapsed
@@ -41,7 +41,7 @@ def task_2():
     query.get_activities_reg_mult_times()
 
     # Q6: Find possibly infected people
-     #query.get_possibly_infected_people()
+    query.get_possibly_infected_people()
 
     # Q7: get users who've never taken a taxi
     query.get_non_taxi_users()
@@ -62,13 +62,14 @@ def task_2():
     query.top_20_attitude_gain_users()
 
     # Q12: Get all invalid activities
-    # query.get_all_users_with_invalid_activities()
+    query.get_all_users_with_invalid_activities()
 
     timed = str(datetime.timedelta(seconds=(time.time() - start))).split(':')
     print(f'Time elapsed: {timed[0]} hours, {timed[1]} minutes, {timed[2]} seconds')
 
 
 def main():
+    task_1()
     task_2()
 
 

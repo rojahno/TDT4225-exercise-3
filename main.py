@@ -75,10 +75,6 @@ def task_2():
     print(f'Time elapsed: {timed[0]} hours, {timed[1]} minutes, {timed[2]} seconds')
 
 
-def task_3():
-    print('task 3')
-
-
 def main():
     task_2()
 

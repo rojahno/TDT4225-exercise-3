@@ -20,17 +20,17 @@ class Queries:
     # Nr. 1
     def get_num_user(self):
         user_collections = self.db["user"].find().count()
-        print("Nr. of users:", user_collections)
+        answer_print(1, f"Nr. of users: {user_collections}")
 
     # Nr. 1
     def get_num_activities(self):
         activities_collections = self.db["activities"].find().count()
-        print("Nr. of activities:", activities_collections)
+        answer_print(1, f"Nr. of activities: {activities_collections}")
 
     # Nr. 1
     def get_num_trackpoints(self):
         track_point_collections = self.db["track_points"].find().count()
-        print("Nr. of track_points:", track_point_collections)
+        answer_print(1, f"Nr. of track_points: {track_point_collections}")
 
     # Nr. 2
     def get_avg_min_max_act_per_user(self):
@@ -61,9 +61,9 @@ class Queries:
 
         average = sum(num_acs) / num_users
 
-        print(f"min num activities: id: {minimum_with_id[0]}, num: {minimum_with_id[1]}\n"
-              f"max num activities: id: {maximum_with_id[0]}, num: {maximum_with_id[1]}\n"
-              f"avg num activities: {average}")
+        answer_print(2, f"min num activities: id: {minimum_with_id[0]}, num: {minimum_with_id[1]}\n"
+                        f"max num activities: id: {maximum_with_id[0]}, num: {maximum_with_id[1]}\n"
+                        f"avg num activities: {average}")
 
     # Nr. 3
     def get_10_users_highest_num_act(self):
@@ -79,9 +79,10 @@ class Queries:
             {"$limit": 10}
         ]
         )
-        print(f"10 users with most activities:")
+        string_list = []
         for i in ten_best_users:
-            print(f"Id: {i['_id']}, Number of activities: {i['count']}")
+            string_list.append(f"Id: {i['_id']}, Number of activities: {i['count']}")
+        answer_print(3, f"10 users with most activities:", string_list)
 
     # Nr. 4
     def get_nr_users_with_multiple_day_activities(self):
@@ -141,11 +142,12 @@ class Queries:
             {"$sort": {"_id": -1}}
         ])
 
+        string_list = []
         count = 0
         for i in a:
             count += 1
-            print(f"start_time: {i['_id']['start']}, end_time: {i['_id']['end']} count: {i['count']}")
-        print(count)
+            string_list.append(f"start_time: {i['_id']['start']}, end_time: {i['_id']['end']} count: {i['count']}")
+        answer_print(5, "reccuring activities", string_list)
 
     # Nr. 6
     def get_possibly_infected_people(self):
@@ -221,15 +223,15 @@ class Queries:
             {"$sort": {"_id": 1}}
         ])
 
-        print("Users who have never taken a taxi:")
-        printcount = 1
+        string_list = []
+        print_count = 1
         for i in non_taxi_users:
-            if printcount % 6 == 0:
-                print(f"{i['_id']},")
+            if print_count % 6 == 0:
+                string_list.append(f"{i['_id']},")
             else:
-                print(f"{i['_id']},", end=" ")
-            printcount += 1
-        print("")
+                string_list.append(f"{i['_id']},")
+            print_count += 1
+        answer_print(7, "Users who have never taken a taxi:", string_list)
 
     # Nr. 8
     def count_users_per_trasnp_mode(self):
@@ -251,9 +253,10 @@ class Queries:
                 }
             }
         ])
-
+        string_list = []
         for i in users_per_transp_mode:
-            print(f"Trasportation mode: {i['_id']}, Unique non null users: {i['uniqueTranspModeCount']}")
+            string_list.append(f"Trasportation mode: {i['_id']}, Unique non null users: {i['uniqueTranspModeCount']}")
+        answer_print(8, "User count on activity", string_list)
 
     # Nr. 9a
     def year_and_month_with_most_activities(self):
@@ -281,8 +284,9 @@ class Queries:
             {"$sort": {"max_activities": -1}},
             {"$limit": 1}
         ])
+        string_list = []
         for i in year:
-            print(f"year: {i['_id']}, num activities: {i['max_activities']}")
+            string_list.append(f"year: {i['_id']}, num activities: {i['max_activities']}")
 
         month = self.db["activities"].aggregate([
             {
@@ -310,7 +314,8 @@ class Queries:
             {"$limit": 1}
         ])
         for i in month:
-            print(f"month: {months[i['_id'] - 1]}, num activities: {i['max_activities']}")
+            string_list.append(f"month: {months[i['_id'] - 1]}, num activities: {i['max_activities']}")
+        answer_print(9, "Year and month with most activities", string_list)
 
     # Nr. 9b
     def user_most_activities_specific_year_month(self):
@@ -391,7 +396,6 @@ class Queries:
         ])
 
         act_id = [activity["_id"] for activity in activities]
-        print(len(act_id))
 
         track_points = self.db["track_points"].aggregate([
             {
@@ -423,7 +427,6 @@ class Queries:
         ])
         dist = 0
         for i in track_points:
-            print(len(i["lat_lons"]))
             for j in range(0, len(i["lat_lons"]) - 1):
                 dist += haversine(tuple(i["lat_lons"][j - 1]), tuple(i["lat_lons"][j]))
         print(f"User 112 walked {dist} km in 2008")
@@ -463,14 +466,14 @@ class Queries:
                         current_user_altitude_sum += (tp_list[i]["altitude"] - tp_list[i - 1]["altitude"])
             print(user_id, "done")
             accumulated_altitudes.append((user_id, current_user_altitude_sum))
-            sorted(accumulated_altitudes, key=lambda x: x[1])
-        print("Top 20 users with highest altitude gained:")
+            accumulated_altitudes = sorted(accumulated_altitudes, key=lambda x: x[1], reverse=True)
+        string_list = []
         for i in accumulated_altitudes[:20]:
-            print(f"id: {i[0]}, altitude gained: {i[1]}")
+            string_list.append(f"id: {i[0]}, altitude gained: {i[1]}")
+        answer_print(11, "Top 20 users with highest altitude gained:", string_list)
 
     # Nr. 12
     def get_all_users_with_invalid_activities(self):
-        print('Task 12')
         track_points = self.db["track_points"].aggregate([
             {
                 "$project": {
@@ -514,4 +517,14 @@ class Queries:
                     else:
                         user_dict[user_id] = 1
                 prev_point = point
-        pprint(sorted(user_dict.items()))
+        answer_print(12, "Users with invalid activities and their count", sorted(user_dict.items()))
+
+
+def answer_print(question_nr=0, string="", string_list=None):
+    print("\n---------------------------")
+    print(f"QUESTION: {question_nr}")
+    print(string)
+    if string_list is not None:
+        for string in string_list:
+            print(string)
+    print("---------------------------\n")

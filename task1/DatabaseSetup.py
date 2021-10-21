@@ -1,9 +1,7 @@
-import os
-import sys
-import uuid
-
-from DbConnector import DbConnector
 import datetime
+import os
+from bson.objectid import ObjectId
+from DbConnector import DbConnector
 
 """
 Handles the database setup.
@@ -92,13 +90,11 @@ class DatabaseSetup:
         @return: The last line in the file
         @rtype: str
         """
-        try:
-            path = os.path.join(root, file)  # The current path
-            with open(path, "r") as f1:
-                last_line = f1.readlines()[-1].rstrip()
-                return last_line
-        except Exception as e:
-            print(f'An error occurred while retrieving the last line in the file:{sys.exc_info()[2]}')
+
+        path = os.path.join(root, file)  # The current path
+        with open(path, "r") as f1:
+            last_line = f1.readlines()[-1].rstrip()
+            return last_line
 
     def get_first_line(self, root: str, file: str):
         """
@@ -110,14 +106,12 @@ class DatabaseSetup:
         @return: The first relevant line
         @rtype: str
         """
-        try:
-            with open(os.path.join(root, file)) as f:
-                return_line = ""
-                for read in range(7):
-                    return_line = f.readline()  # removes the first lines containing descriptions.
-                return return_line
-        except Exception as e:
-            print(f'An error occurred while retrieving the first line in the file:{sys.exc_info()[2]}')
+
+        with open(os.path.join(root, file)) as f:
+            return_line = ""
+            for read in range(7):
+                return_line = f.readline()  # removes the first lines containing descriptions.
+            return return_line
 
     def format_label_line(self, label: str):
         """
@@ -186,7 +180,7 @@ class DatabaseSetup:
         last_line = self.get_last_line(root, file)
         start_time = self.format_trajectory_time(first_line)
         end_time = self.format_trajectory_time(last_line)
-        activity_id = str(uuid.uuid4())
+        activity_id = ObjectId()
         date_key = tuple((start_time, end_time))
 
         if user_id in labeled_users:
@@ -238,8 +232,7 @@ class DatabaseSetup:
         @return: None
         @rtype: None
         """
-        # populate label_dict
-        self.create_label_activities()
+        self.create_label_activities()  # populate label_dict
         for root, dirs, files in os.walk('dataset/dataset/Data', topdown=True):
             if len(dirs) == 0 and len(files) > 0:
                 user = self.create_user(root)
@@ -276,16 +269,9 @@ class DatabaseSetup:
 
     def insert_user(self, user: dict):
         self.db["user"].insert_one(user)
-        print("Created user", user, "with", "activities")
 
     def insert_activity(self, activity: dict):
         self.db["activities"].insert_one(activity)
-        # print("Created activity", activity, "with", "trackpoints")
 
     def batch_insert_track_points(self, track_points: list):
         self.db["track_points"].insert_many(track_points)
-        # print("Created trackpoints", track_points)
-
-    def get_num_trackpoints(self):
-        track_point_collections = self.db["track_points"].find().count()
-        print(track_point_collections)

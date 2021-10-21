@@ -156,35 +156,38 @@ class Queries:
         possibly_infected_people = []
         points_for_users_matching_date = self.db["track_points"].aggregate([
             {
+              "$match": {
+                  "$expr": {"$lte": [
+                      {"$abs":
+                           {"$dateDiff": {
+                               "startDate": "$start_time",
+                               "endDate": date_to_match,
+                               "unit": "minute"}}},
+                      60]}
+              }
+            },
+            {
                 "$group": {
                     "_id": "$user_id",
                     "time_match_trackpoint": {
-                        "$push": {
-                            "$cond": [
-                                {"$lte": [{"$abs": {"$divide": [{"$subtract": ["$start_time", date_to_match]}, 60000]}},
-                                          60]},
-                                "$location.coordinates",
-                                "$$REMOVE"
-                            ]
-                        }
+                        "$push": "$location.coordinates"
                     }
                 }
             },
-            {
-                "$match": {
-                    "$expr": {"$ne": [{"$size": "$time_match_trackpoint"}, 0]}
-                },
-            }
         ], allowDiskUse=True)
 
         for i in points_for_users_matching_date:
+            if i['_id'] in possibly_infected_people:
+                continue
             for user_point in i["time_match_trackpoint"]:
-                if (haversine(tuple(user_point), point_to_match, unit='m') <= 100) and (
-                        i['_id'] not in possibly_infected_people):
+                if haversine(tuple(user_point), point_to_match, unit='m') <= 100:
                     possibly_infected_people.append(i['_id'])
+                    break
 
-        for j in range(0, len(possibly_infected_people) - 4, 4):
-            print(possibly_infected_people[j:j + 4])
+        print("Possibly infected users:")
+        for user in possibly_infected_people:
+            print(user)
+
 
     # Nr. 7
     def get_non_taxi_users(self):

@@ -155,7 +155,7 @@ class DatabaseSetup:
         @param line: The trajectory line
         @type line: str
         @return: latitude, longitude, altitude, days_passed and start_time
-        @rtype: str
+        @rtype: tuple
         """
         values = line.split(",")
         latitude = float(values[0])

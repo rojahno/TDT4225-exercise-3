@@ -59,7 +59,7 @@ def task_2():
     query.tot_dist_in_2008_by_user_112()
 
     # Q11: top 20 users who have gained most altitude meters
-    query.top_20_attitude_gain_users()
+    query.top_20_altitude_gain_users()
 
     # Q12: Get all invalid activities
     query.get_all_users_with_invalid_activities()

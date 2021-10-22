@@ -432,7 +432,7 @@ class Queries:
         answer_print(10, f"User 112 walked {round(dist, 2)} km in 2008")
 
     # Nr. 11
-    def top_20_attitude_gain_users(self):
+    def top_20_altitude_gain_users(self):
         """
          Finds the top 20 users who have gained the most altitude meters.
         """
@@ -469,7 +469,7 @@ class Queries:
                 prev_altitude = prev_point['altitude']
                 current_altitude = point['altitude']
                 if (current_altitude > prev_altitude) and (prev_altitude != -777) and (current_altitude != -777):
-                    altitude_gain = (current_altitude - prev_altitude) * 0.32808
+                    altitude_gain = (current_altitude - prev_altitude) * 0.3048
                     if current_user in user_dict.keys():
                         prev_altitude_gain = user_dict[current_user]
                         user_dict.update({current_user: prev_altitude_gain + altitude_gain})

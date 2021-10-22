@@ -7,7 +7,7 @@ import datetime
 def task_1():
     start = time.time()  # Starts the timer to see how much time has elapsed.
     setup = DatabaseSetup()  # Creates a database setup object
-    setup.drop_all_coll()  # Drops the previous created collections
+    # setup.drop_all_coll()  # Drops the previous created collections
     setup.create_all_collections()  # Creates user, activities and track points
     setup.show_coll()  # Shows the collections
     setup.traverse_dataset()  # Traverses the dataset and inserts data into the collections
@@ -69,7 +69,7 @@ def task_2():
 
 
 def main():
-    # task_1()
+    task_1()
     task_2()
 
 
